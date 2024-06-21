@@ -1,6 +1,7 @@
 # sjc
 config.py
-
+data/result_per_iter/
+data/save_params/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

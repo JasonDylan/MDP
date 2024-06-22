@@ -795,7 +795,6 @@ class TaskAllocationProblem:
                 A = self.func3_transfer(S, V)
                 pr[t] = self.Profit(S, A)
                 xi = self.task_arr[t]
-                print(f"{t=} {pr[t]=} \n{S=}\n{A=}")
                 S_next = self.state_trans(S, A, xi)
             total_reward = [0] * T
             for t in range(T - 1, -1, -1):

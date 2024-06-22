@@ -837,6 +837,7 @@ class TaskAllocationProblem:
         pr = T * [0]
         save_S = init_S
         for t in range(T):
+            print(f"{S_current=}")
             Y_allocation = self.generate_random_allocation(
                 S_current, self.H_home_of_server, L_server=self.L_server
             )
@@ -891,117 +892,56 @@ class TaskAllocationProblem:
         return allocation
 
     def math_program_near(self, S, L_server):
+        """
+        生成最近分配决策。
+
+        参数:
+        S (tuple): 当前状态。
+
+        返回:
+        list: 最近分配决策,包含每个服务员的位置和等级。
+        """
         n_il, servers_info = S
-        M_servers = len(servers_info)  # 服务员数量
-        I_citys = len(n_il)  # 城市数量
+        M_servers = len(servers_info)
+        I_citys = len(n_il)
+        L_levels = len(n_il[0])
 
-        M_servers = self.M_servers  # 服务员数量
-        I_citys = self.I_citys  # 城市数量
-        # 创建问题实例
-        prob = pulp.LpProblem("Optimal_Server_Assignment", pulp.LpMinimize)
+        allocation = [None] * M_servers
 
-        # 定义决策变量 y_{mil} 为二元变量
-        y = pulp.LpVariable.dicts(
-            "y",
-            (
-                (m, i, l)
-                for m in range(M_servers)
-                for i in range(I_citys)
-                for l in range(self.L_levels + 1)
-            ),
-            cat=pulp.LpBinary,
-        )
-        prob += pulp.lpSum(
-            self.c1[servers_info[m][0]][i] * y[m, i, l]
+        # 计算每个服务员与每个任务之间的距离
+        distances = {
+            (m, i, l): self.c1[servers_info[m][0] - 1][i]
             for m in range(M_servers)
             for i in range(I_citys)
-            for l in range(0, self.L_levels + 1)
-        )
+            for l in range(1, L_levels + 1)
+        }
 
-        # 每个服务员必须且只能被分配到一个任务，无论是在某个城市执行任务还是在家休息。 l 等于0 表示在家休息
         for m in range(M_servers):
-            prob += (
-                pulp.lpSum(
-                    y[m, i, l] for i in range(I_citys) for l in range(self.L_levels + 1)
-                )
-                == 1
-            )
+            im, wm = servers_info[m]
 
-        # 每个城市 i 每个等级 l 被分配的服务员数量不能超过该等级的任务数量
-        for i in range(self.I_citys):
-            for l in range(1, self.L_levels + 1):
-                prob += (
-                    pulp.lpSum(y[m, i, l] for m in range(self.M_servers))
-                    <= n_il[i][l - 1]
-                )
-
-        # 分配给所有服务员的所有任务总数不能超过实际的任务总数。
-        total_tasks = sum(
-            n_il[i][l - 1] for i in range(I_citys) for l in range(1, self.L_levels + 1)
-        )
-        prob += (
-            pulp.lpSum(
-                y[m, i, l]
-                for m in range(M_servers)
-                for i in range(I_citys)
-                for l in range(1, self.L_levels + 1)
-            )
-            <= total_tasks
-        )
-
-        # 分配的任务总数不能超过可分配的业务员数量 (非休息日)。
-        available_servers = sum(1 for _, (_, wm) in enumerate(servers_info) if wm > 0)
-        prob += (
-            pulp.lpSum(
-                y[m, i, l]
-                for m in range(M_servers)
-                for i in range(I_citys)
-                for l in range(1, self.L_levels + 1)
-            )
-            <= available_servers
-        )
-
-        for m, (im, wm) in enumerate(servers_info):
             if wm == 0:
-                try:
-                    prob += y[m, self.H_home_of_server[m], 0] == 1
-                except Exception as ex:
-                    print(f"{ex=} {m=} {self.H_home_of_server=} {self.L_server=} {S=}")
-                    raise ex
-            elif wm > 0:
+                allocation[m] = (m, self.H_home_of_server[m], 0)
+            else:
+                # todo 这里其实也是随机，因为业务员时按顺序分配最近的，而不是全局最近的，如果要真的求最近的还是得用pulp改
+                available_tasks = [
+                    (i, l)
+                    for i in range(I_citys)
+                    for l in range(1, L_levels + 1)
+                    if n_il[i][l - 1] > 0 and l >= L_server[m]
+                ]
 
-                # 服务员必须分配任务，且任务等级必须高于服务员等级
-                # 1. 允许选择 "待在家中" (l = 0)
-                prob += (
-                    pulp.lpSum(
-                        y[m, i, l]
-                        for i in range(I_citys)
-                        for l in range(self.L_levels + 1)
-                        if (l == 0 and i == self.H_home_of_server[m])
-                        or (l > 0 and l >= L_server[m] and n_il[i][l - 1] > 0)
+                if available_tasks:
+                    # 找到距离最近的任务
+                    nearest_task = min(
+                        available_tasks,
+                        key=lambda task: distances[(m, task[0], task[1])],
                     )
-                    == 1
-                )
+                    allocation[m] = (m, nearest_task[0], nearest_task[1])
+                    n_il[nearest_task[0]][nearest_task[1] - 1] -= 1
+                else:
+                    allocation[m] = (m, self.H_home_of_server[m], 0)
 
-        # 限制了服务员只能接受等级不高于自身等级的任务
-        for m in range(M_servers):
-            for i in range(I_citys):
-                for l in range(1, self.L_levels + 1):
-                    prob += y[m, i, l] <= (L_server[m] >= l)
-
-        # 求解问题
-        prob.solve()
-        obj = pulp.value(prob.objective)
-
-        # 解析结果
-        result = [
-            (m, i, l)
-            for m in range(M_servers)
-            for i in range(I_citys)
-            for l in range(self.L_levels + 1)
-            if pulp.value(y[m, i, l]) == 1
-        ]
-        return obj, result
+        return allocation
 
     def nearest_distance(self, init_S, T=7):
         # 获取任务到达量的数组
@@ -1019,8 +959,9 @@ class TaskAllocationProblem:
                 # 使用上一状态的结果作为当前状态
                 S = S_next
             # 使用最近距离策略求解决策和收益
-            obj, A = self.math_program_near(S, L_server=self.L_server)
-            pr[t] = obj
+            A = self.math_program_near(S, L_server=self.L_server)
+            profit = self.Profit(S=S, A=A)
+            pr[t] = profit
 
             # 获取当前时间步的任务到达量
             xi = task_arr[t]
@@ -1222,6 +1163,8 @@ class TaskAllocationProblem:
         profit = reward - cost1 - cost2
         
         print(f"{reward=}-{cost1=}-{cost2=}={profit=}")
+        if int(reward) == 0:
+            print(f"{S=}\n{A=}")
         return profit
 
     def single_stage(self, init_S):

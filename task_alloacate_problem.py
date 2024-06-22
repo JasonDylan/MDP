@@ -795,7 +795,7 @@ class TaskAllocationProblem:
                 A = self.func3_transfer(S, V)
                 pr[t] = self.Profit(S, A)
                 xi = self.task_arr[t]
-                print(f"{t=} {pr[t]=} \n{S=}\n {A=}")
+                print(f"{t=} {pr[t]=} \n{S=}\n{A=}")
                 S_next = self.state_trans(S, A, xi)
             total_reward = [0] * T
             for t in range(T - 1, -1, -1):
@@ -819,21 +819,7 @@ class TaskAllocationProblem:
         for i in range(min(5, J)):
             self.save_to_one_csv(self.init_S_J[i], csv_path=f"init/init_state_{i}.csv")
 
-    def func11(self):
-        # run_random_allocate
-        total_reward_for_S0 = {}
-        for i in range(self.max_iter):
-            print(f"-------------iters:{i=}--------------")
-            S_init = self.S_init_per_iter[i]
-            reward = self.calc_total_reward_for_S_init_by_rnd(S_init)
-            S_str = str(S_init)
-            last_reward = total_reward_for_S0.get(S_str, 0)
-            if last_reward < reward:
-                total_reward_for_S0[S_str] = reward
-
-        return total_reward_for_S0
-
-    def calc_total_reward_for_S_init_by_rnd(self, S_t):
+    def calc_total_reward_for_init_S_by_rnd(self, init_S, T=7):
         """
         随机分配策略下的总收益计算。
 
@@ -844,23 +830,27 @@ class TaskAllocationProblem:
         返回:
         float: 总收益。
         """
-        S_current = S_t
+        S_current = init_S
         total_reward = 0
+        task_arr = self.task_arr
 
-        for t in range(self.T):
+        # 初始化收益列表
+        pr = T * [0]
+        save_S = init_S
+        for t in range(T):
             Y_allocation = self.generate_random_allocation(
-                S_current, self.H_home_of_server, self.mathscr_L
+                S_current, self.H_home_of_server, L_server=self.L_server
             )
 
-            R_t = self.calc_reward(S_current, Y_allocation)
+            R_t = self.Profit(S=S_current, A=Y_allocation)
             total_reward += R_t
-
-            S_next = self.transition(
-                S_current, Y_allocation, Xi_arriving_tasks=self.arriving_tasks_for_T[t]
-            )
+            pr[t] = R_t
+            
+            # 获取当前时间步的任务到达量
+            xi = task_arr[t]
+            S_next = self.state_trans(S=S_current, act=Y_allocation, xi=xi)
             S_current = S_next
-
-        return total_reward
+        return save_S, pr
 
     def generate_random_allocation(self, S, H_home_of_server, L_server):
         """
@@ -894,7 +884,7 @@ class TaskAllocationProblem:
 
                 if available_tasks:
                     i, l = random.choice(available_tasks)
-                    allocation[m] = (m, i + 1, l)
+                    allocation[m] = (m, i, l)
                     n_il[i][l - 1] -= 1
                 else:
                     allocation[m] = (m, H_home_of_server[m], 0)
@@ -1014,14 +1004,14 @@ class TaskAllocationProblem:
         ]
         return obj, result
 
-    def nearest_distance(self, init_S):
+    def nearest_distance(self, init_S, T=7):
         # 获取任务到达量的数组
         task_arr = self.task_arr
 
         # 初始化收益列表
-        pr = self.T * [0]
+        pr = T * [0]
 
-        for t in range(self.T):
+        for t in range(T):
             if t == 0:
                 # 生成初始状态
                 S = init_S
@@ -1162,12 +1152,12 @@ class TaskAllocationProblem:
         ]
         return obj, result
 
-    def static_optimal(self, init_S):
+    def static_optimal(self, init_S, T=7):
         # static_optimal(I_citys, L_levels, W_workdays, M_servers, x_max_task_num, H_home_of_server, lambd,\
         #             T, lambda_il, L_server, r1, c1, c2):
         task_arr = self.task_arr
-        pr = self.T * [0]
-        for t in range(self.T):
+        pr = T * [0]
+        for t in range(T):
             if t == 0:
                 S = init_S
                 save_S = S
@@ -1191,25 +1181,29 @@ class TaskAllocationProblem:
         n_il, servers_info = S
         M_servers = len(servers_info)
 
+        # 计算奖励
         reward = 0
         for m in range(M_servers):
             reward += self.r1[A[m][2]]
-
+        # 计算第一个成本， 去完成任务的成本
         cost1 = 0
-        for m in range(M_servers):
-            cost1 += self.c1[servers_info[m][0]][A[m][1] - 1]
 
+        for m in range(M_servers):
+            # print(f"{servers_info[m][0]=} {A[m][1]=}")
+            cost1 += self.c1[servers_info[m][0]][A[m][1]] # c1 是服务器在不同任务和等级上的成本矩阵
+        # 计算第二个成本
         cost2 = 0
-        dic1 = {}
-        for i, row in enumerate(n_il):  # i = i
-            for j, value in enumerate(row):  # j = l
+        dic1 = {} # 城市等级任务数
+        # 每个
+        for i, row in enumerate(n_il):  # i = i i 表示任务
+            for j, value in enumerate(row):  # j = l j 表示等级 j [0,4] l [1,5]
                 dic1[(i, j + 1)] = (
                     value  # dic1是将任务矩阵写成字典形式 value = level task count
                 )
-        dic2 = {
+        dic2 = { # 决策城市等级
             (x[1], x[2]): 1 for x in A if x[2] != 0
         }  # dic2是将决策A=(m,i,l)写成字典
-        S_A_cell = {}
+        S_A_cell = {} # 剩余任务数
         for (
             key
         ) in (
@@ -1220,11 +1214,15 @@ class TaskAllocationProblem:
             else:
                 S_A_cell[key] = dic1[key]
         S_A = [[0] * len(n_il[0]) for _ in range(len(n_il))]
-        for key, value in S_A_cell.items():
-            S_A[key[0]][key[1] - 1] = value  # S_A 是S-A之后的值
+        for key, value in S_A_cell.items(): 
+            i = key[0]
+            l = key[1]
+            S_A[i][l - 1] = value  # S_A 是S-A之后的值
         cost2 = self.c2 * np.sum(S_A)
 
         profit = reward - cost1 - cost2
+        
+        print(f"{reward=}-{cost1=}-{cost2=}={profit=}")
         return profit
 
     def single_stage(self, init_S):

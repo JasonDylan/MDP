@@ -3,7 +3,7 @@ import csv
 import json
 import pickle
 import random
-
+import os
 import numpy as np
 
 from my_wraps import timeit
@@ -17,6 +17,47 @@ class TaskRunner:
     def __init__(self) -> None:
         pass
 
+    def debug_profit(self):
+        
+        J = 1
+        T = 21
+        Z = 3
+
+        self.init_a_problem(T=T, Z=Z, J=J)
+
+        from numpy import array 
+        S=(array([[ 0, 12,  5,  6,  0],
+       [ 0,  2,  3,  4,  3],
+       [ 0, 12,  3,  1,  2],
+       [ 0,  3,  2,  4,  1],
+       [ 0,  0,  0,  0,  5],
+       [ 3,  4,  2,  3,  1],
+       [ 1,  3,  0,  9,  9],
+       [ 1,  1,  0,  7,  1],
+       [ 1,  3,  0,  6,  4],
+       [ 2,  3,  3,  5,  1],
+       [ 1,  1,  4, 11,  3],
+       [ 4,  1,  3,  1,  2],
+       [ 5,  2,  6,  3,  1],
+       [ 3,  1,  3,  0,  9],
+       [ 6,  2,  0,  8,  7],
+       [ 6,  8,  1,  6,  1],
+       [ 4,  5,  1,  0,  7],
+       [ 2,  5,  4,  3,  1],
+       [ 0,  9,  1,  5,  7],
+       [ 5, 10,  4,  0,  0],
+       [ 0,  6,  3,  1,  1],
+       [ 1,  8,  1,  2,  0],
+       [ 0,  1,  4,  5,  3],
+       [ 2,  4,  0,  6,  8],
+       [ 2,  5,  2,  1,  2],
+       [ 1, 12,  2,  0,  2]]), [(1, 0), (3, 4), (0, 5), (23, 3), (8, 2), (1, 5), (24, 3), (9, 0), (23, 6), (15, 4), (1, 2), (17, 4), (10, 4), (2, 0), (10, 2), (13, 5), (1, 2), (0, 5), (2, 5), (23, 0), (4, 4), (16, 6), (6, 0), (0, 3), (10, 4), (6, 6), (10, 5), (13, 5), (23, 0), (17, 5), (13, 4), (17, 2), (14, 5), (10, 0), (18, 0), (17, 0), (1, 0), (24, 4), (25, 4), (5, 6)])
+        A=[(0, 20, 0), (1, 3, 3), (2, 0, 3), (3, 23, 2), (4, 8, 2), (5, 1, 3), (6, 24, 1), (7, 4, 0), (8, 23, 4), (9, 15, 1), (10, 1, 3), (11, 17, 3), (12, 10, 5), (13, 2, 0), (14, 23, 1), (15, 18, 4), (16, 1, 5), (17, 7, 1), (18, 2, 4), (19, 6, 0), (20, 4, 5), (21, 16, 3), (22, 19, 0), (23, 0, 3), (24, 10, 5), (25, 6, 2), (26, 10, 1), (27, 13, 1), (28, 22, 0), (29, 17, 3), (30, 13, 1), (31, 17, 2), (32, 14, 1), (33, 18, 0), (34, 8, 0), (35, 25, 0), (36, 0, 0), (37, 24, 2), (38, 25, 3), (39, 5, 3)]
+
+        print(type(S), S[0], S)
+        profit = self.problem.Profit(S,A)
+        print(f"{profit=}")
+    
     def run_test(self):
 
         J = 1
@@ -26,8 +67,37 @@ class TaskRunner:
         self.init_a_problem(T=T, Z=Z, J=J)
         s_value = self.run_VFA_task(T=T, Z=Z, J=J)
 
+    def run_benchmark(self):
+        T_values = [7, 14, 21]
+        Z_values = [3, 5, 9]
+        S_n = 5
+        problem_n = 4
+        result = np.zeros((S_n, problem_n, len(T_values), len(Z_values)))
+        for T_idx, T in enumerate(T_values):
+            for Z_idx, Z in enumerate(Z_values):
+
+                print(f"-------{(T,Z)=}--------")
+                self.init_a_problem(T=T, J=10000)
+
+                for S_idx, s in enumerate(self.problem.init_S_J[0:5]):
+                    # RA RDA MA
+                    save_S, pr1= self.problem.calc_total_reward_for_init_S_by_rnd(init_S=s, T=T)
+                    save_S, pr2 = self.problem.nearest_distance(init_S=s, T=T) # pr 是T个阶段的收益
+                    save_S, pr3 = self.problem.static_optimal(init_S=s, T=T)
+        #             print(S_idx, pr1)
+        #              # 解包元组并求和
+                    result[S_idx][1][T_idx][Z_idx] = sum(pr1)
+                    result[S_idx][2][T_idx][Z_idx] = sum(pr2)
+                    result[S_idx][3][T_idx][Z_idx] = sum(pr3)
+
+                    print(f"{(S_idx,1,T_idx,Z_idx)=} {result[S_idx][1][T_idx][Z_idx]=}")
+                    print(f"{(S_idx,2,T_idx,Z_idx)=} {result[S_idx][2][T_idx][Z_idx]=}")
+                    print(f"{(S_idx,3,T_idx,Z_idx)=} {result[S_idx][3][T_idx][Z_idx]=}")
+
+        self.save_to_csv(result, T_values, Z_values, S_n, file_name = "./data/benchmark_results.csv")
+        
     def run(self):
-        J = 5
+        J = 10000
         T_values = [7, 14, 21]
         Z_values = [3, 5, 9]
         S_n = 5
@@ -92,8 +162,21 @@ class TaskRunner:
                 result, T_values, Z_values, S_n, file_name="./data/final/results.csv"
             )
 
+            # 获取文件夹路径
+            folder_path = os.path.dirname("./data/save_params/s_value.pkl")
+
+            # 检查文件夹是否存在，如果不存在则创建它
+            if not os.path.exists(folder_path):
+                os.makedirs(folder_path)
             with open("./data/save_params/s_value.pkl", "wb") as file:
                 pickle.dump(s_value, file)
+            
+            # 获取文件夹路径
+            folder_path = os.path.dirname("./data/save_params/s_value_s_values.json")
+
+            # 检查文件夹是否存在，如果不存在则创建它
+            if not os.path.exists(folder_path):
+                os.makedirs(folder_path)
             # 单独保存 s_value.s_values 字典为 JSON
             with open("./data/save_params/s_value_s_values.json", "w") as file:
                 json.dump(s_value.s_values, file, indent=4)
@@ -108,28 +191,6 @@ class TaskRunner:
         result = np.zeros((S_n, problem_n, len(T_values), len(Z_values)))
 
         try:
-            # for T_idx, T in enumerate(T_values):
-            #     for Z_idx, Z in enumerate(Z_values):
-
-            #         print(f"-------{(T,Z)=}--------")
-            #         self.init_a_problem(T=T)
-
-            #         for S_idx, s in enumerate(problem.init_S_J[0:5]):
-            #             save_S, pr1= self.problem.static_optimal(init_S=s)
-            #             save_S, pr2 = self.problem.nearest_distance(init_S=s) # pr 是T个阶段的收益
-            #             save_S, pr3 = self.problem.single_stage(init_S=s)
-            #             print(S_idx, pr1)
-            #              # 解包元组并求和
-            #             result[S_idx][1][T_idx][Z_idx] = sum(pr1)
-            #             result[S_idx][2][T_idx][Z_idx] = sum(pr2)
-            #             result[S_idx][3][T_idx][Z_idx] = sum(pr3)
-
-            #             print(f"{(S_idx,1,T_idx,Z_idx)=} {result[S_idx][1][T_idx][Z_idx]=}")
-            #             print(f"{(S_idx,2,T_idx,Z_idx)=} {result[S_idx][2][T_idx][Z_idx]=}")
-            #             print(f"{(S_idx,3,T_idx,Z_idx)=} {result[S_idx][3][T_idx][Z_idx]=}")
-
-            # self.save_to_csv(result, T_values, Z_values, S_n, file_name = "./data/benchmark_results.csv")
-            print(f"----------------------finished benchmark---------------------")
             for T_idx, T in enumerate(T_values):
                 for Z_idx, Z in enumerate(Z_values):
                     print(f"-------{(T,Z)=}--------")
@@ -138,7 +199,7 @@ class TaskRunner:
                     VFA_state_values.update({(T, Z): s_value})
 
                     for S_idx, s in enumerate(self.problem.init_S_J[0:5]):
-                        s_agg = self.problem.func2(s, Z_cluster_num=Z, X=x_max_task_num)
+                        s_agg = self.problem.func2(s, Z_cluster_num=Z, X=self.problem.x_max_task_num)
                         for value in s_value:
                             if value[0] == 0 and all(
                                 np.array_equal(a, b) for a, b in zip(s_agg, value[2])
@@ -205,7 +266,7 @@ class TaskRunner:
             L_server=L_server,
             r1=r1,
             c1=c1,
-            c2=200,
+            c2=20,
         )
 
         self.problem.all_task_init(J=J, T=T)
@@ -247,6 +308,12 @@ class TaskRunner:
                         row.append(result[S_idx][problem_idx][T_idx][Z_idx])
                 rows.append(row)
 
+        # 获取文件夹路径
+        folder_path = os.path.dirname(file_name)
+
+        # 检查文件夹是否存在，如果不存在则创建它
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
         with open(file_name, "w+", newline="") as file:
             writer = csv.writer(file)
             writer.writerow(headers)
@@ -355,11 +422,17 @@ def test():
 
 # %%
 task = TaskRunner()
-# task.run()
+task.run()
 
 # # %%
 # task.run_org()
 
 # %%
 
-task.run_test()
+# task.run_test()
+
+# %%
+# task.debug_profit()
+# %%
+task.run_benchmark()
+# %%

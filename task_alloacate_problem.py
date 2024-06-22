@@ -1161,6 +1161,8 @@ class TaskAllocationProblem:
         cost2 = self.c2 * np.sum(S_A)
 
         profit = reward - cost1 - cost2
+        if cost2<0:
+            print(f"{A=}\n{n_il=}\n{dic1=}\n{dic2=}\n{S_A_cell=}\n{S_A=}")
         
         print(f"{reward=}-{cost1=}-{cost2=}={profit=}")
         if int(reward) == 0:

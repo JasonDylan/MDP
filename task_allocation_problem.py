@@ -59,21 +59,21 @@ class TaskRunner:
             )
         
         profit = self.problem.Profit(S,A)
-        print(f"1.{profit=} {A=}")
+        print(f"RA.{profit=} {A=}")
 
         A = self.problem.math_program_near(
             S,  L_server=self.problem.L_server
         )
         
         profit = self.problem.Profit(S,A)
-        print(f"2.{profit=} {A=}")
+        print(f"RDA.{profit=} {A=}")
 
         obj, A = self.problem.math_program_static(
             S,  L_server=self.problem.L_server
         )
         
         profit = self.problem.Profit(S,A)
-        print(f"3.{profit=} {A=}")
+        print(f"MA.{profit=} {A=}")
         
     def run_test(self):
 
@@ -456,5 +456,5 @@ task = TaskRunner()
 # %%
 task.debug_profit()
 # %%
-# task.run_benchmark()
+task.run_benchmark()
 # %%

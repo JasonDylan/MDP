@@ -1,5 +1,6 @@
 # %%
 import csv
+import copy
 import json
 import pickle
 import random
@@ -839,7 +840,6 @@ class TaskAllocationProblem:
         pr = T * [0]
         save_S = init_S
         for t in range(T):
-            print(f"{S_current=}")
             Y_allocation = self.generate_random_allocation(
                 S_current, self.H_home_of_server, L_server=self.L_server
             )
@@ -866,7 +866,7 @@ class TaskAllocationProblem:
         返回:
         list: 随机决策,包含每个服务员的位置和等级。
         """
-        n_il, servers_info = S
+        n_il, servers_info = copy.deepcopy(S)
         M_servers = len(servers_info)
 
         allocation = [None] * M_servers
@@ -903,7 +903,7 @@ class TaskAllocationProblem:
         返回:
         list: 最近分配决策,包含每个服务员的位置和等级。
         """
-        n_il, servers_info = S
+        n_il, servers_info = copy.deepcopy(S)
         M_servers = len(servers_info)
         I_citys = len(n_il)
         L_levels = len(n_il[0])
@@ -917,7 +917,6 @@ class TaskAllocationProblem:
             for i in range(I_citys)
             for l in range(1, 1+L_levels)
         }
-        # print(f"{servers_info=}\n{n_il=}")
         for m in range(M_servers):
             im, wm = servers_info[m]
 
@@ -1125,7 +1124,7 @@ class TaskAllocationProblem:
 
     def Profit(self, S, A):
         # def Profit(S, A, r1, c1, c2):
-        n_il, servers_info = S
+        n_il, servers_info = copy.deepcopy(S)
         M_servers = len(servers_info)
 
         # 计算奖励
@@ -1140,36 +1139,18 @@ class TaskAllocationProblem:
             cost1 += self.c1[servers_info[m][0]][A[m][1]] # c1 是服务器在不同任务和等级上的成本矩阵
         # 计算第二个成本
         cost2 = 0
-        dic1 = {} # 城市等级任务数
-        # 每个
-        for i, row in enumerate(n_il):  # i = i i 表示任务
-            for j, value in enumerate(row):  # j = l j 表示等级 j [0,4] l [1,5]
-                dic1[(i, j + 1)] = (
-                    value  # dic1是将任务矩阵写成字典形式 value = level task count
-                )
-        dic2 = { # 决策城市等级
-            (x[1], x[2]): 1 for x in A if x[2] != 0
-        }  # dic2是将决策A=(m,i,l)写成字典
-        S_A_cell = {} # 剩余任务数
-        for (
-            key
-        ) in (
-            dic1
-        ):  # 对于每个任务 i l的id 如果存在在决策里，表示有分配给这个任务的 dic2[key] 必然为1
-            if key in dic2:
-                S_A_cell[key] = dic1[key] - dic2[key]  # 减少分配
-            else:
-                S_A_cell[key] = dic1[key]
-        S_A = [[0] * len(n_il[0]) for _ in range(len(n_il))]
-        for key, value in S_A_cell.items(): 
-            i = key[0]
-            l = key[1]
-            S_A[i][l - 1] = value  # S_A 是S-A之后的值
+        n_il_format = np.array([[0] * self.L_levels 
+                                for _ in range(self.I_citys)])
+        
+        for item in A:
+            m, i, l =  item
+            if l > 0 :
+                n_il_format[i][l-1] += 1
+        S_A = n_il-n_il_format
         cost2 = self.c2 * np.sum(S_A)
-
         profit = reward - cost1 - cost2
         if cost2<0:
-            print(f"{A=}\n{n_il=}\n{dic1=}\n{dic2=}\n{S_A_cell=}\n{S_A=}")
+            print(f"{cost2=}{A=}\n{n_il=}\n{n_il_format=}\n{S_A=}")
         
         print(f"{reward=}-{cost1=}-{cost2=}={profit=}")
         if int(reward) == 0:

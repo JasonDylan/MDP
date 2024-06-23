@@ -27,7 +27,6 @@ class TaskRunner:
         from numpy import array 
         init_S = self.problem.init_S_J[0]
         n_il_1,server_info= deepcopy(init_S)
-        # print(f"{n_il=}")
         A = self.problem.math_program_near(S=init_S, L_server=self.problem.L_server)
         # A=[(0, 8, 5), (1, 0, 5), (2, 14, 5), (3, 25, 2), (4, 8, 0), (5, 12, 3), (6, 25, 3), (7, 10, 3), (8, 3, 4), (9, 21, 3), (10, 21, 0), (11, 10, 3), (12, 16, 5), (13, 22, 3), (14, 18, 0), (15, 9, 4), (16, 1, 0), (17, 4, 1), (18, 7, 4), (19, 23, 1), (20, 6, 5), (21, 16, 3), (22, 22, 5), (23, 1, 3), (24, 4, 5), (25, 7, 2), (26, 4, 5), (27, 4, 5), (28, 19, 2), (29, 22, 3), (30, 12, 3), (31, 7, 0), (32, 17, 1), (33, 22, 4), (34, 18, 3), (35, 22, 4), (36, 9, 5), (37, 1, 3), (38, 7, 4), (39, 13, 3)]
         
@@ -35,11 +34,9 @@ class TaskRunner:
         I_citys = self.problem.I_citys
         L_levels = self.problem.L_levels
         n_il_format = np.array([[0] * L_levels for _ in range(I_citys)])
-        # print(f"{A=}")
-        # print(f"{len(A)=}")
+        
         for item in A:
             m, i, l =  item
-            # l [0, L_levels]
             if l > 0 :
                 n_il_format[i][l-1] += 1
 
@@ -121,7 +118,7 @@ class TaskRunner:
         print("sp")
         
         self.init_a_problem(T=7, J=10000)
-        self.problem.nearest_distance(init_S=self.problem.init_S_J[0], T=7) 
+        # self.problem.nearest_distance(init_S=self.problem.init_S_J[0], T=7) 
         print("sp done")
         for T_idx, T in enumerate(T_values):
             for Z_idx, Z in enumerate(Z_values):

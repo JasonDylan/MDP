@@ -107,6 +107,8 @@ class TaskAllocationProblem:
         self.c1 = c1
         self.c2 = c2
 
+    
+        
     def func1(self):
         # generate_state(I_citys, L_levels, W_workdays, M_servers, x_max_task_num, H_home_of_server, lambd):
 
@@ -910,12 +912,12 @@ class TaskAllocationProblem:
 
         # 计算每个服务员与每个任务之间的距离
         distances = {
-            (m, i, l): self.c1[servers_info[m][0] - 1][i]
+            (m, i, l): self.c1[servers_info[m][0]][i]
             for m in range(M_servers)
             for i in range(I_citys)
-            for l in range(1, L_levels + 1)
+            for l in range(1, 1+L_levels)
         }
-
+        # print(f"{servers_info=}\n{n_il=}")
         for m in range(M_servers):
             im, wm = servers_info[m]
 
@@ -924,23 +926,28 @@ class TaskAllocationProblem:
             else:
                 # todo 这里其实也是随机，因为业务员时按顺序分配最近的，而不是全局最近的，如果要真的求最近的还是得用pulp改
                 available_tasks = [
-                    (i, l)
+                    (i, l+1)
                     for i in range(I_citys)
-                    for l in range(1, L_levels + 1)
-                    if n_il[i][l - 1] > 0 and l >= L_server[m]
+                    for l in range(L_levels)
+                    if n_il[i][l] > 0 and l+1 >= L_server[m]
                 ]
-
+                # print(f"{available_tasks=}")
                 if available_tasks:
                     # 找到距离最近的任务
                     nearest_task = min(
                         available_tasks,
                         key=lambda task: distances[(m, task[0], task[1])],
                     )
-                    allocation[m] = (m, nearest_task[0], nearest_task[1])
-                    n_il[nearest_task[0]][nearest_task[1] - 1] -= 1
+                    
+                    i_nearest, l_nearest = nearest_task
+                    allocation[m] = (m, i_nearest, l_nearest)
+                    # print(f"{m=} {nearest_task=}")    
+                    # print(f"{allocation[m]=} {n_il[i_nearest]=} {servers_info[m]=}")
+                
+                    n_il[i_nearest][l_nearest-1] -= 1
                 else:
                     allocation[m] = (m, self.H_home_of_server[m], 0)
-
+           
         return allocation
 
     def nearest_distance(self, init_S, T=7):

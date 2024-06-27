@@ -775,7 +775,8 @@ class TaskAllocationProblem:
         X = self.x_max_task_num
         T = T
         s_value = SValue(T)
-        print(f"{len(self.task_arr)=}")
+        Z = Z_cluster_num
+        print(f"{(T,Z)=} {len(self.task_arr)=}")
         for j in range(J):
             pr = T * [0]
             for t in range(T):
@@ -805,7 +806,7 @@ class TaskAllocationProblem:
             s_value.update_total_rewards(total_reward)
 
             len_state = len(s_value.s_values[0].keys())
-            print(f"-------{j=} {t=} {len_state=} {total_reward=}------")
+            print(f"-------{(T,Z)=} {j=} {t=} {len_state=} {total_reward=}------")
 
         return s_value
 

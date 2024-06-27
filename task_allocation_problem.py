@@ -1,4 +1,5 @@
 # %%
+import sys
 import csv
 import json
 import pickle
@@ -17,122 +18,24 @@ class TaskRunner:
     def __init__(self) -> None:
         pass
 
-    def test_A_array(self):
-        
-        J = 1
-        T = 21
-        Z = 3
-
-        self.init_a_problem(T=T, Z=Z, J=J)
-        from numpy import array 
-        init_S = self.problem.init_S_J[0]
-        n_il_1,server_info= deepcopy(init_S)
-        A = self.problem.math_program_near(S=init_S, L_server=self.problem.L_server)
-        # A=[(0, 8, 5), (1, 0, 5), (2, 14, 5), (3, 25, 2), (4, 8, 0), (5, 12, 3), (6, 25, 3), (7, 10, 3), (8, 3, 4), (9, 21, 3), (10, 21, 0), (11, 10, 3), (12, 16, 5), (13, 22, 3), (14, 18, 0), (15, 9, 4), (16, 1, 0), (17, 4, 1), (18, 7, 4), (19, 23, 1), (20, 6, 5), (21, 16, 3), (22, 22, 5), (23, 1, 3), (24, 4, 5), (25, 7, 2), (26, 4, 5), (27, 4, 5), (28, 19, 2), (29, 22, 3), (30, 12, 3), (31, 7, 0), (32, 17, 1), (33, 22, 4), (34, 18, 3), (35, 22, 4), (36, 9, 5), (37, 1, 3), (38, 7, 4), (39, 13, 3)]
-        
-        M_servers = self.problem.M_servers
-        I_citys = self.problem.I_citys
-        L_levels = self.problem.L_levels
-        n_il_format = np.array([[0] * L_levels for _ in range(I_citys)])
-        
-        for item in A:
-            m, i, l =  item
-            if l > 0 :
-                n_il_format[i][l-1] += 1
-
-        # print(f"{n_il_format=}\n{n_il_1=}\n{n_il_1-n_il_format=}")
-
-    def debug_profit(self):
-        
-        J = 1
-        T = 21
-        Z = 3
-
-        self.init_a_problem(T=T, Z=Z, J=J)
-
-        from numpy import array 
-        S=(array([[3, 8, 1, 3, 3],
-                [0, 0, 5, 3, 2],
-                [0, 6, 3, 0, 1],
-                [0, 2, 5, 2, 0],
-                [3, 0, 2, 0, 8],
-                [1, 3, 3, 1, 1],
-                [3, 2, 0, 3, 6],
-                [2, 1, 0, 8, 0],
-                [1, 2, 0, 3, 2],
-                [5, 0, 1, 1, 0],
-                [3, 3, 1, 5, 2],
-                [5, 0, 1, 1, 0],
-                [2, 0, 2, 1, 0],
-                [1, 1, 1, 1, 3],
-                [1, 0, 0, 4, 4],
-                [1, 4, 0, 3, 0],
-                [0, 3, 1, 0, 3],
-                [0, 1, 3, 3, 0],
-                [1, 4, 4, 1, 2],
-                [2, 3, 3, 0, 0],
-                [0, 2, 2, 2, 4],
-                [2, 0, 3, 1, 0],
-                [0, 0, 7, 3, 2],
-                [3, 8, 0, 6, 1],
-                [2, 6, 0, 0, 1],
-                [1, 5, 3, 0, 1]]), [(9, 0), (3, 4), (0, 5), (23, 3), (8, 2), (7, 5), (7, 3), (4, 0), (23, 6), (3, 4), (21, 2), (23, 4), (17, 4), (17, 0), (18, 2), (13, 5), (1, 2), (0, 5), (2, 5), (0, 0), (7, 4), (16, 6), (13, 0), (0, 3), (17, 4), (6, 6), (22, 5), (20, 5), (17, 0), (17, 5), (13, 4), (7, 2), (14, 5), (22, 0), (13, 0), (1, 0), (12, 0), (24, 4), (25, 4), (5, 6)])
-        A=[(0, 20, 0), (1, 3, 0), (2, 0, 0), (3, 23, 0), (4, 8, 0), (5, 7, 0), (6, 7, 0), (7, 4, 0), (8, 23, 0), (9, 3, 0), (10, 21, 0), (11, 23, 0), (12, 17, 0), (13, 2, 0), (14, 18, 0), (15, 13, 0), (16, 1, 0), (17, 0, 0), (18, 2, 0), (19, 6, 0), (20, 7, 0), (21, 16, 0), (22, 19, 0), (23, 0, 0), (24, 17, 0), (25, 6, 0), (26, 22, 0), (27, 20, 0), (28, 22, 0), (29, 17, 0), (30, 13, 0), (31, 7, 0), (32, 14, 0), (33, 18, 0), (34, 8, 0), (35, 25, 0), (36, 0, 0), (37, 24, 0), (38, 25, 0), (39, 5, 0)]
-
-        A = self.problem.generate_random_allocation(
-            S, self.problem.H_home_of_server, L_server=self.problem.L_server
-        )
-        
-        profit = self.problem.Profit(S,A)
-        print(f"RA.{profit=} {A=}")
-
-        A = self.problem.math_program_near(
-            S,  L_server=self.problem.L_server
-        )
-        
-        profit = self.problem.Profit(S,A)
-        print(f"RDA.{profit=} {A=}")
-
-        obj, A = self.problem.math_program_static(
-            S,  L_server=self.problem.L_server
-        )
-        
-        profit = self.problem.Profit(S,A)
-        print(f"MA.{profit=} {A=}")
-        
-    def run_test(self):
-
-        J = 1
-        T = 21
-        Z = 3
-
-        self.init_a_problem(T=T, Z=Z, J=J)
-        s_value = self.run_VFA_task(T=T, Z=Z, J=J)
-
     def run_benchmark(self):
         T_values = [7, 14, 21]
         Z_values = [3, 5, 9]
         S_n = 5
         problem_n = 4
-        result = np.zeros((S_n, problem_n, len(T_values), len(Z_values)))
-        print("sp")
-        
+        result = np.zeros((S_n, problem_n, len(T_values), len(Z_values)))        
         self.init_a_problem(T=7, J=10000)
-        # self.problem.nearest_distance(init_S=self.problem.init_S_J[0], T=7) 
         print("sp done")
         for T_idx, T in enumerate(T_values):
             for Z_idx, Z in enumerate(Z_values):
 
                 print(f"-------{(T,Z)=}--------")
                 self.init_a_problem(T=T, J=10000)
-
                 for S_idx, s in enumerate(self.problem.init_S_J[0:5]):
                     # RA RDA MA
                     save_S, pr1= self.problem.calc_total_reward_for_init_S_by_rnd(init_S=s, T=T)
                     save_S, pr2 = self.problem.nearest_distance(init_S=s, T=T) # pr 是T个阶段的收益
                     save_S, pr3 = self.problem.static_optimal(init_S=s, T=T)
-        #             print(S_idx, pr1)
-        #              # 解包元组并求和
                     result[S_idx][1][T_idx][Z_idx] = sum(pr1)
                     result[S_idx][2][T_idx][Z_idx] = sum(pr2)
                     result[S_idx][3][T_idx][Z_idx] = sum(pr3)
@@ -142,48 +45,22 @@ class TaskRunner:
                     print(f"{(S_idx,3,T_idx,Z_idx)=} {result[S_idx][3][T_idx][Z_idx]=}")
 
         self.save_to_csv(result, T_values, Z_values, S_n, file_name = "./data/benchmark_results.csv")
-        
-    def run(self):
+        print(f"----------------------finished benchmark---------------------")
+    
+    def main(self):
         J = 10000
-        T_values = [7, 14, 21]
-        Z_values = [3, 5, 9]
         S_n = 5
         problem_n = 4
-        VFA_state_values = {}
-        # 初始化 result 四维矩阵
+        T_values = [7, 14, 21]
+        Z_values = [3, 5, 9]
         result = np.zeros((S_n, problem_n, len(T_values), len(Z_values)))
-
+        VFA_state_values = {}
+        x_max_task_num = 3
         try:
-            # for T_idx, T in enumerate(T_values):
-            #     for Z_idx, Z in enumerate(Z_values):
-
-            #         print(f"-------{(T,Z)=}--------")
-            #         self.init_a_problem(T=T)
-
-            #         for S_idx, s in enumerate(problem.init_S_J[0:5]):
-            #             save_S, pr1= self.problem.static_optimal(init_S=s)
-            #             save_S, pr2 = self.problem.nearest_distance(init_S=s) # pr 是T个阶段的收益
-            #             save_S, pr3 = self.problem.single_stage(init_S=s)
-            #             print(S_idx, pr1)
-            #              # 解包元组并求和
-            #             result[S_idx][1][T_idx][Z_idx] = sum(pr1)
-            #             result[S_idx][2][T_idx][Z_idx] = sum(pr2)
-            #             result[S_idx][3][T_idx][Z_idx] = sum(pr3)
-
-            #             print(f"{(S_idx,1,T_idx,Z_idx)=} {result[S_idx][1][T_idx][Z_idx]=}")
-            #             print(f"{(S_idx,2,T_idx,Z_idx)=} {result[S_idx][2][T_idx][Z_idx]=}")
-            #             print(f"{(S_idx,3,T_idx,Z_idx)=} {result[S_idx][3][T_idx][Z_idx]=}")
-
-            # self.save_to_csv(result, T_values, Z_values, S_n, file_name = "./data/benchmark_results.csv")
-            print(f"----------------------finished benchmark---------------------")
             for T_idx, T in enumerate(T_values):
                 for Z_idx, Z in enumerate(Z_values):
-                    print(f"-------{(T,Z)=}--------")
-                    self.init_a_problem(T=T)
-                    x_max_task_num = self.problem.x_max_task_num
-                    s_value = self.run_VFA_task(T, Z, J=J)
+                    s_value = self.run(T=T, Z=Z, J=J)
                     VFA_state_values.update({(T, Z): s_value})
-
                     # 计算矩阵
                     for S_idx, s in enumerate(self.problem.init_S_J[0 : min(J, 5)]):
                         s_agg = self.problem.func2(s, Z_cluster_num=Z, X=x_max_task_num)
@@ -193,93 +70,44 @@ class TaskRunner:
                         print(
                             f"{(S_idx,0,T_idx,Z_idx)=} {result[S_idx][0][T_idx][Z_idx]=}"
                         )
-
                     # 保存 result 到 CSV 文件
                     self.save_to_csv(
                         result,
-                        T_values,
-                        Z_values,
-                        S_n,
                         file_name=f"./data/result_per_iter/result_{J}_{Z}_{T}.csv",
                     )
+                    s_value_memory = sys.getsizeof(s_value)
+                    VFA_state_values_memory = sys.getsizeof(VFA_state_values)
+                    print(f"{(T,Z)=} s_value memory usage: {s_value_memory} bytes")
+                    print(f"{(T,Z)=} VFA_state_values memory usage: {VFA_state_values_memory} bytes")
         finally:
-
             # 将结果保存到 CSV 文件
-            self.save_to_csv(
-                result, T_values, Z_values, S_n, file_name="./data/final/results.csv"
-            )
+            self.save_to_csv(result, file_name="./data/final/results.csv")
 
+
+    def run(self, T, Z, J)->SValue:
+        # 初始化 result 四维矩阵
+        try:
+            print(f"-------{(T,Z)=}--------")
+            self.init_a_problem(T=T, Z=Z, J=J)
+            s_value = self.run_VFA_task(T=T, Z=Z, J=J)                    
+        finally:
             # 获取文件夹路径
-            folder_path = os.path.dirname("./data/save_params/s_value.pkl")
+            folder_path = os.path.dirname(f"./data/save_params/s_value_{T}_{Z}_{J}.pkl")
 
             # 检查文件夹是否存在，如果不存在则创建它
             if not os.path.exists(folder_path):
                 os.makedirs(folder_path)
-            with open("./data/save_params/s_value.pkl", "wb") as file:
+            with open(f"./data/save_params/s_value_{T}_{Z}_{J}.pkl", "wb") as file:
                 pickle.dump(s_value, file)
             
             # 获取文件夹路径
-            folder_path = os.path.dirname("./data/save_params/s_value_s_values.json")
+            folder_path = os.path.dirname(f"./data/save_params/s_value_s_values_{T}_{Z}_{J}.json")
 
             # 检查文件夹是否存在，如果不存在则创建它
             if not os.path.exists(folder_path):
                 os.makedirs(folder_path)
             # 单独保存 s_value.s_values 字典为 JSON
-            with open("./data/save_params/s_value_s_values.json", "w") as file:
-                json.dump(s_value.s_values, file, indent=4)
-
-    def run_org(self):
-        T_values = [7, 14, 21]
-        Z_values = [3, 5, 9]
-        S_n = 5
-        problem_n = 4
-        VFA_state_values = {}
-        # 初始化 result 四维矩阵
-        result = np.zeros((S_n, problem_n, len(T_values), len(Z_values)))
-
-        try:
-            for T_idx, T in enumerate(T_values):
-                for Z_idx, Z in enumerate(Z_values):
-                    print(f"-------{(T,Z)=}--------")
-                    self.init_a_problem(T=T)
-                    s_value = self.run_VFA_task_org(T, Z, J=5)
-                    VFA_state_values.update({(T, Z): s_value})
-
-                    for S_idx, s in enumerate(self.problem.init_S_J[0:5]):
-                        s_agg = self.problem.func2(s, Z_cluster_num=Z, X=self.problem.x_max_task_num)
-                        for value in s_value:
-                            if value[0] == 0 and all(
-                                np.array_equal(a, b) for a, b in zip(s_agg, value[2])
-                            ):
-                                V = value[3]
-
-                                print(f"same {V=}")
-                                break
-                        else:
-                            V = 0
-                        result[S_idx][0][T_idx][Z_idx] = V
-                        print(
-                            f"{(S_idx,0,T_idx,Z_idx)=} {result[S_idx][0][T_idx][Z_idx]=}"
-                        )
-                    # 保存 result 到 CSV 文件
-                    csv_filename = f"result_{self.problem.J}_{Z}_{T}_org.csv"
-
-                    self.save_to_csv(
-                        result, T_values, Z_values, S_n, file_name=csv_filename
-                    )
-        finally:
-            # 将结果保存到文件
-            np.save("result_org.npy", result)
-
-            # 将结果保存到 CSV 文件
-            self.save_to_csv(
-                result, T_values, Z_values, S_n, file_name="./data/results_org.csv"
-            )
-
-            with open("./data/s_value_org.pkl", "wb") as file:
-                pickle.dump(s_value, file)
-            # 单独保存 s_value.s_values 字典为 JSON
-            with open("./data/s_value_s_values_org.json", "w") as file:
+            with open(f"./data/save_params/s_value_s_values_{T}_{Z}_{J}.json", "w") as file:
                 json.dump(s_value.s_values, file, indent=4)
 
     def init_a_problem(self, T=7, Z=3, J=10000):
@@ -324,17 +152,8 @@ class TaskRunner:
         s_value = self.problem.func8(T=T, J=J, Z_cluster_num=Z)
         return s_value
 
-    @timeit
-    def run_VFA_task_org(self, T, Z, J=10000) -> SValue:
-        s_value = self.problem.func8_org(
-            T=T,
-            J=J,
-            Z_cluster_num=Z,
-        )
-        return s_value
-
     def save_to_csv(
-        self, result, T_values, Z_values, S_n, file_name="./data/results.csv"
+        self, result, file_name="./data/results.csv"
     ):
         """
         将结果保存到 CSV 文件中。
@@ -366,121 +185,7 @@ class TaskRunner:
             writer.writerow(headers)
             writer.writerows(rows)
 
-
-# %%
-def test():
-    I_citys = 26
-    L_levels = 5
-    W_workdays = 6
-    M_servers = 40
-    x_max_task_num = 2
-    random.seed(42)
-    np.random.seed(42)
-    H_home_of_server = [
-        random.randint(1, I_citys) - 1 for _ in range(M_servers)
-    ]  # 随机家的位置
-    lambd = np.random.rand(I_citys, L_levels)  # 生成率参数矩阵,
-    T = 7
-    lambda_il = np.random.rand(I_citys, L_levels)
-    L_server = [random.randint(1, L_levels) for _ in range(M_servers)]
-    r1 = [0, 3500, 3000, 2500, 2000, 1500]
-    c1 = [
-        [0 if i == j else random.randint(100, 500) for j in range(I_citys)]
-        for i in range(I_citys)
-    ]
-    c2 = 20
-    J = 10000
-    Z_cluster_num = 3
-    X = 3
-
-    # 创建问题实例
-    problem = TaskAllocationProblem(
-        I_citys,
-        L_levels,
-        W_workdays,
-        M_servers,
-        x_max_task_num,
-        H_home_of_server,
-        lambd,
-        T,
-        lambda_il,
-        L_server,
-        r1,
-        c1,
-        c2,
-    )
-
-    print(f"{L_server=}")
-    print(f"{H_home_of_server=}")
-    print(f"{c1=}")
-
-    random.seed(42)
-    np.random.seed(42)
-    for i in range(5):
-        S = problem.func1()
-        if not i:
-            print(f"{S[0]=}\n {S[1]=}")
-        # problem.save_to_csv(S, tasks_csv_path=f"init/init_tasks_rnd_{i}.csv", servers_csv_path=f"init/init_servers_rnd_{i}.csv")
-        problem.save_to_one_csv(S, csv_path=f"init/init_state_{i}.csv")
-
-    print("New")
-
-    random.seed(42)
-    np.random.seed(42)
-    S = problem.func1()
-    print(f"func1 {S[0]=}\n {S[1]=}")
-
-    barS = problem.func2(S=S, Z_cluster_num=Z_cluster_num, X=X)
-    print(f"func2 {barS=}")
-
-    problem.task_arr = problem.func7()
-    A = problem.func3_transfer(S=S, V=0)
-    print(f"func3_transfer {A=}")
-
-    # func4 测试
-    mathcal_L, N_1, N_2 = problem.func4(S=S)
-    print(f"func4 {(mathcal_L, N_1, N_2, S)=}")
-
-    # func5 测试
-    Y = problem.func5(S, mathcal_L, N_1, N_2)
-    print(f"func5 {Y=}")
-
-    # func6 测试
-    A_per_L_set = problem.func6(S, mathcal_L, N_1, N_2)
-    print(f"func6 {A_per_L_set=}")
-
-    profit = problem.Profit(S, A)
-    print(f"测试收益函数 Profit {profit=}")
-
-    arriving_tasks_i = problem.func7()
-    print(f"func7 {arriving_tasks_i=}")
-
-    problem.all_task_init(J=10000, T=7)
-    save_S, pr = problem.nearest_distance(init_S=problem.init_S_J[0])
-    print(f"{save_S}=, {pr=}")
-
-    # func13 测试 single stage
-    save_S, pr = problem.static_optimal(init_S=problem.init_S_J[0])
-    print(f"{save_S}=, {pr=}")
-
-
-# %%
-# test()
-
 # %%
 task = TaskRunner()
-# task.run()
-
-# # %%
-# task.run_org()
-
-# %%
-
-# task.run_test()
-
-# %%
-# task.debug_profit()
-# %%
-task.run_benchmark()
-# %%
-# task.test_A_array()
+task.main()
+# task.run_benchmark()

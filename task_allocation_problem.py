@@ -153,7 +153,7 @@ class TaskRunner:
         return s_value
 
     def save_to_csv(
-        self, result, file_name="./data/results.csv"
+        self, result, T_values, Z_values, S_n, file_name="./data/results.csv"
     ):
         """
         将结果保存到 CSV 文件中。

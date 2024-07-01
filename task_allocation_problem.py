@@ -10,10 +10,44 @@ import pandas as pd
 from copy import deepcopy
 from my_wraps import timeit
 from task_alloacate_problem import SValue, TaskAllocationProblem
+from tqdm.contrib.concurrent import thread_map
 
+from functools import partial
 # 装饰器用于计算函数调用时间
 
 
+def save_to_csv(
+    result, T_values, Z_values, S_n, file_name="./data/results.csv"
+):
+    """
+    将结果保存到 CSV 文件中。
+    :param result: 四维矩阵，包含不同参数组合下的收益。
+    :param T_values: T 的取值列表。
+    :param Z_values: Z 的取值列表。
+    :param S_n: S 的数量。
+    """
+    headers = [""] + [f"T={T},Z={Z}" for T in T_values for Z in Z_values]
+
+    rows = []
+
+    for S_idx in range(S_n):
+        for problem_idx, problem_name in enumerate(["VFA", "RA", "RDA", "MA"]):
+            row = [f"Sj{S_idx + 1}_{problem_name}"]
+            for T_idx in range(len(T_values)):
+                for Z_idx in range(len(Z_values)):
+                    row.append(result[S_idx][problem_idx][T_idx][Z_idx])
+            rows.append(row)
+
+    # 获取文件夹路径
+    folder_path = os.path.dirname(file_name)
+
+    # 检查文件夹是否存在，如果不存在则创建它
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    with open(file_name, "w+", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(headers)
+        writer.writerows(rows)
 class TaskRunner:
     
     city_num = 26
@@ -49,52 +83,29 @@ class TaskRunner:
                     print(f"{(S_idx,2,T_idx,Z_idx)=} {result[S_idx][2][T_idx][Z_idx]=}")
                     print(f"{(S_idx,3,T_idx,Z_idx)=} {result[S_idx][3][T_idx][Z_idx]=}")
 
-        self.save_to_csv(result, T_values, Z_values, S_n, file_name = "./data/benchmark_results.csv")
+        save_to_csv(result, T_values, Z_values, S_n, file_name = "./data/benchmark_results.csv")
         print(f"----------------------finished benchmark---------------------")
     
-    def main(self):
-        J = 10000
-        S_n = 5
-        problem_n = 4
-        T_values = [7, 14, 21]
-        Z_values = [3, 5, 9]
-        result = np.zeros((S_n, problem_n, len(T_values), len(Z_values)))
-        VFA_state_values = {}
-        x_max_task_num = 3
-        try:
-            for T_idx, T in enumerate(T_values):
-                for Z_idx, Z in enumerate(Z_values):
-                    s_value = self.run(T=T, Z=Z, J=J)
-                    VFA_state_values.update({(T, Z): s_value})
-                    # 计算矩阵
-                    for S_idx, s in enumerate(self.problem.init_S_J[0 : min(J, 5)]):
-                        s_agg = self.problem.func2(s, Z_cluster_num=Z, X=x_max_task_num)
-                        result[S_idx][0][T_idx][Z_idx] = s_value.get_total_reward(
-                            t=0, S_agg=s_agg
-                        )
-                        print(
-                            f"{(S_idx,0,T_idx,Z_idx)=} {result[S_idx][0][T_idx][Z_idx]=}"
-                        )
-                    # 保存 result 到 CSV 文件
-                    self.save_to_csv(
-                        result, T_values, Z_values, S_n,
-                        file_name=f"./data/result_per_iter/result_{J}_{Z}_{T}.csv",
-                    )
-                    s_value_memory = sys.getsizeof(s_value)
-                    VFA_state_values_memory = sys.getsizeof(VFA_state_values)
-                    print(f"{(T,Z)=} s_value memory usage: {s_value_memory} bytes")
-                    print(f"{(T,Z)=} VFA_state_values memory usage: {VFA_state_values_memory} bytes")
-        finally:
-            # 将结果保存到 CSV 文件
-            self.save_to_csv(result, T_values, Z_values, S_n, file_name="./data/final/results.csv")
-
-
-    def run(self, T, Z, J)->SValue:
+            
+    def run(self, T, Z, J, S_n, problem_n, x_max_task_num)->SValue:
         # 初始化 result 四维矩阵
         try:
             print(f"-------{(T,Z)=}--------")
             self.init_a_problem(T=T, Z=Z, J=J)
-            s_value = self.run_VFA_task(T=T, Z=Z, J=J)                    
+            s_value = self.run_VFA_task(T=T, Z=Z, J=J)    
+
+            
+            result = np.zeros((S_n, problem_n, 1, 1))
+            for S_idx, s in enumerate(self.problem.init_S_J[0 : min(J, self.S_n)]):
+                s_agg = self.problem.func2(s, Z_cluster_num=Z, X=x_max_task_num)
+                result[S_idx][0][0][0] = s_value.get_total_reward(t=0, S_agg=s_agg)
+                print(f"{(S_idx, 0, 0, 0)=} {result[S_idx][0][0][0]=}")
+                
+            # 保存 result 到 CSV 文件
+            save_to_csv(result, [T], [Z], S_n, file_name=f"./data/result_per_iter/result_{J}_{Z}_{T}.csv")
+            
+            s_value_memory = sys.getsizeof(s_value)
+            print(f"{(T,Z)=} s_value memory usage: {s_value_memory} bytes")           
         finally:
             # 获取文件夹路径
             folder_path = os.path.dirname(f"./data/save_params/s_value_{T}_{Z}_{J}.pkl")
@@ -114,7 +125,7 @@ class TaskRunner:
             # 单独保存 s_value.s_values 字典为 JSON
             with open(f"./data/save_params/s_value_s_values_{T}_{Z}_{J}.json", "w") as file:
                 json.dump(s_value.s_values, file, indent=4)
-
+        return s_value,result
     
       
     def get_proveng_city_dist_mat_df(self):
@@ -260,40 +271,36 @@ class TaskRunner:
         s_value = self.problem.func8(T=T, J=J, Z_cluster_num=Z)
         return s_value
 
-    def save_to_csv(
-        self, result, T_values, Z_values, S_n, file_name="./data/results.csv"
-    ):
-        """
-        将结果保存到 CSV 文件中。
-        :param result: 四维矩阵，包含不同参数组合下的收益。
-        :param T_values: T 的取值列表。
-        :param Z_values: Z 的取值列表。
-        :param S_n: S 的数量。
-        """
-        headers = [""] + [f"T={T},Z={Z}" for T in T_values for Z in Z_values]
 
-        rows = []
-
-        for S_idx in range(S_n):
-            for problem_idx, problem_name in enumerate(["VFA", "RA", "RDA", "MA"]):
-                row = [f"Sj{S_idx + 1}_{problem_name}"]
-                for T_idx in range(len(T_values)):
-                    for Z_idx in range(len(Z_values)):
-                        row.append(result[S_idx][problem_idx][T_idx][Z_idx])
-                rows.append(row)
-
-        # 获取文件夹路径
-        folder_path = os.path.dirname(file_name)
-
-        # 检查文件夹是否存在，如果不存在则创建它
-        if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
-        with open(file_name, "w+", newline="") as file:
-            writer = csv.writer(file)
-            writer.writerow(headers)
-            writer.writerows(rows)
 
 # %%
-task = TaskRunner()
-task.main()
-# task.run_benchmark()
+
+def process_task(T, Z, J, S_n, problem_n, x_max_task_num):
+    VFA_state_values = {}
+    task = TaskRunner()
+    s_value, result = task.run(T=T, Z=Z, J=J, S_n=S_n, problem_n=problem_n, x_max_task_num=x_max_task_num)
+    VFA_state_values.update({(T, Z): s_value})
+    return result
+
+def main():
+    J = 10000
+    S_n = 5
+    problem_n = 4
+    T_values = [7, 14, 21]
+    Z_values = [3, 5, 9]
+    result = np.zeros((S_n, problem_n, len(T_values), len(Z_values)))
+    x_max_task_num = 3
+
+    task_args = [(T, Z, J, S_n, problem_n, x_max_task_num) for T in T_values for Z in Z_values]
+
+    try:
+        results = thread_map(process_task, task_args, max_workers=4) # 调整 max_workers 根据你的 CPU 核数
+        
+        for i, (T, Z, _, _, _, _) in enumerate(task_args):
+            T_idx = T_values.index(T)
+            Z_idx = Z_values.index(Z)
+            result[:, :, T_idx, Z_idx] = results[i][:, :, 0, 0]
+            
+    finally:
+        # 将结果保存到 CSV 文件
+        save_to_csv(result, T_values, Z_values, S_n, file_name="./data/final/results.csv")

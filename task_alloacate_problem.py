@@ -1,6 +1,6 @@
 # %%
-import csv
 import copy
+import csv
 import json
 import pickle
 import random

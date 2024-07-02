@@ -1,24 +1,24 @@
 # %%
-import sys
 import csv
 import json
+import os
 import pickle
 import random
-import os
+import sys
+from copy import deepcopy
+from functools import partial
+
 import numpy as np
 import pandas as pd
-from copy import deepcopy
-from my_wraps import timeit
-from task_alloacate_problem import SValue, TaskAllocationProblem
 from tqdm.contrib.concurrent import thread_map
 
-from functools import partial
+from my_wraps import timeit
+from task_alloacate_problem import SValue, TaskAllocationProblem
+
 # 装饰器用于计算函数调用时间
 
 
-def save_to_csv(
-    result, T_values, Z_values, S_n, file_name="./data/results.csv"
-):
+def save_to_csv(result, T_values, Z_values, S_n, file_name="./data/results.csv"):
     """
     将结果保存到 CSV 文件中。
     :param result: 四维矩阵，包含不同参数组合下的收益。
@@ -48,11 +48,14 @@ def save_to_csv(
         writer = csv.writer(file)
         writer.writerow(headers)
         writer.writerows(rows)
+
+
 class TaskRunner:
-    
+
     city_num = 26
     DIST_MATRIX_PATH = r"./data/中国各城市空间权重矩阵(1).xlsx"
     PATH_CITY_DIST = f"./data/final/city_{city_num}.xlsx"
+
     # 本类的目标
     def __init__(self) -> None:
         pass
@@ -62,7 +65,7 @@ class TaskRunner:
         Z_values = [3, 5, 9]
         S_n = 5
         problem_n = 4
-        result = np.zeros((S_n, problem_n, len(T_values), len(Z_values)))        
+        result = np.zeros((S_n, problem_n, len(T_values), len(Z_values)))
         self.init_a_problem(T=7, J=10000)
         print("sp done")
         for T_idx, T in enumerate(T_values):
@@ -72,8 +75,12 @@ class TaskRunner:
                 self.init_a_problem(T=T, J=10000)
                 for S_idx, s in enumerate(self.problem.init_S_J[0:5]):
                     # RA RDA MA
-                    save_S, pr1= self.problem.calc_total_reward_for_init_S_by_rnd(init_S=s, T=T)
-                    save_S, pr2 = self.problem.nearest_distance(init_S=s, T=T) # pr 是T个阶段的收益
+                    save_S, pr1 = self.problem.calc_total_reward_for_init_S_by_rnd(
+                        init_S=s, T=T
+                    )
+                    save_S, pr2 = self.problem.nearest_distance(
+                        init_S=s, T=T
+                    )  # pr 是T个阶段的收益
                     save_S, pr3 = self.problem.static_optimal(init_S=s, T=T)
                     result[S_idx][1][T_idx][Z_idx] = sum(pr1)
                     result[S_idx][2][T_idx][Z_idx] = sum(pr2)
@@ -83,29 +90,35 @@ class TaskRunner:
                     print(f"{(S_idx,2,T_idx,Z_idx)=} {result[S_idx][2][T_idx][Z_idx]=}")
                     print(f"{(S_idx,3,T_idx,Z_idx)=} {result[S_idx][3][T_idx][Z_idx]=}")
 
-        save_to_csv(result, T_values, Z_values, S_n, file_name = "./data/benchmark_results.csv")
+        save_to_csv(
+            result, T_values, Z_values, S_n, file_name="./data/benchmark_results.csv"
+        )
         print(f"----------------------finished benchmark---------------------")
-    
-            
-    def run(self, T, Z, J, S_n, problem_n, x_max_task_num)->SValue:
+
+    def run(self, T, Z, J, S_n, problem_n, x_max_task_num) -> SValue:
         # 初始化 result 四维矩阵
         try:
             print(f"-------{(T,Z)=}--------")
             self.init_a_problem(T=T, Z=Z, J=J)
-            s_value = self.run_VFA_task(T=T, Z=Z, J=J)    
+            s_value = self.run_VFA_task(T=T, Z=Z, J=J)
 
-            
             result = np.zeros((S_n, problem_n, 1, 1))
             for S_idx, s in enumerate(self.problem.init_S_J[0 : min(J, self.S_n)]):
                 s_agg = self.problem.func2(s, Z_cluster_num=Z, X=x_max_task_num)
                 result[S_idx][0][0][0] = s_value.get_total_reward(t=0, S_agg=s_agg)
                 print(f"{(S_idx, 0, 0, 0)=} {result[S_idx][0][0][0]=}")
-                
+
             # 保存 result 到 CSV 文件
-            save_to_csv(result, [T], [Z], S_n, file_name=f"./data/result_per_iter/result_{J}_{Z}_{T}.csv")
-            
+            save_to_csv(
+                result,
+                [T],
+                [Z],
+                S_n,
+                file_name=f"./data/result_per_iter/result_{J}_{Z}_{T}.csv",
+            )
+
             s_value_memory = sys.getsizeof(s_value)
-            print(f"{(T,Z)=} s_value memory usage: {s_value_memory} bytes")           
+            print(f"{(T,Z)=} s_value memory usage: {s_value_memory} bytes")
         finally:
             # 获取文件夹路径
             folder_path = os.path.dirname(f"./data/save_params/s_value_{T}_{Z}_{J}.pkl")
@@ -115,19 +128,22 @@ class TaskRunner:
                 os.makedirs(folder_path)
             with open(f"./data/save_params/s_value_{T}_{Z}_{J}.pkl", "wb") as file:
                 pickle.dump(s_value, file)
-            
+
             # 获取文件夹路径
-            folder_path = os.path.dirname(f"./data/save_params/s_value_s_values_{T}_{Z}_{J}.json")
+            folder_path = os.path.dirname(
+                f"./data/save_params/s_value_s_values_{T}_{Z}_{J}.json"
+            )
 
             # 检查文件夹是否存在，如果不存在则创建它
             if not os.path.exists(folder_path):
                 os.makedirs(folder_path)
             # 单独保存 s_value.s_values 字典为 JSON
-            with open(f"./data/save_params/s_value_s_values_{T}_{Z}_{J}.json", "w") as file:
+            with open(
+                f"./data/save_params/s_value_s_values_{T}_{Z}_{J}.json", "w"
+            ) as file:
                 json.dump(s_value.s_values, file, indent=4)
-        return s_value,result
-    
-      
+        return s_value, result
+
     def get_proveng_city_dist_mat_df(self):
         self.proveng_city_dist_mat_df = pd.read_excel(
             self.DIST_MATRIX_PATH,
@@ -141,7 +157,7 @@ class TaskRunner:
             .set_index("cityseries")["cityeng"]
             .to_dict()
         )
-    
+
     def get_city_2_proveng_dict(self):
         self.city_to_proveng_dict = (
             self.proveng_city_dist_mat_df[["cityeng", "proveng"]]
@@ -150,10 +166,18 @@ class TaskRunner:
             .to_dict()
         )
 
-    def get_dist_mat_from_xls_df(self,):
-        self.distance_mat = self.proveng_city_dist_mat_df.iloc[:, self.distance_mat_start_idx:]
-        self.distance_mat.index = self.proveng_city_dist_mat_df.iloc[:, self.cityseries_idx].values
-        self.distance_mat.columns = self.proveng_city_dist_mat_df.iloc[:, self.cityseries_idx].values
+    def get_dist_mat_from_xls_df(
+        self,
+    ):
+        self.distance_mat = self.proveng_city_dist_mat_df.iloc[
+            :, self.distance_mat_start_idx :
+        ]
+        self.distance_mat.index = self.proveng_city_dist_mat_df.iloc[
+            :, self.cityseries_idx
+        ].values
+        self.distance_mat.columns = self.proveng_city_dist_mat_df.iloc[
+            :, self.cityseries_idx
+        ].values
 
     def generate_city(self):
         """本函数功能，生成指定数量城市的城市距离矩阵，必然包含上海。
@@ -173,7 +197,7 @@ class TaskRunner:
         # 地理距离矩阵xls 第三列是城市id, city_*, 设定纵坐标
         self.get_dist_mat_from_xls_df()
         self.get_select_city_df()
-        
+
         city_series_columns = self.select_city_df.columns
         city_columns = [
             (
@@ -189,14 +213,18 @@ class TaskRunner:
             index=pd.MultiIndex.from_tuples(city_columns, names=column_names),
             columns=pd.MultiIndex.from_tuples(city_columns, names=column_names),
         )
-        
+
         self.city_distance_df.to_excel(self.PATH_CITY_DIST)
         print(self.PATH_CITY_DIST)
 
-    
     def get_select_city_df(self):
         # 挑选出安徽、江苏、浙江和上海的省份及对应的矩阵数据
-        select_proveng = ["Anhui", "Jiangsu", "Zhejiang", "Shanghai"]  # TODO 可能要换省份
+        select_proveng = [
+            "Anhui",
+            "Jiangsu",
+            "Zhejiang",
+            "Shanghai",
+        ]  # TODO 可能要换省份
         provengs = self.proveng_city_dist_mat_df.iloc[
             :, self.proveng_idx
         ].values  # 表格第一列为城市名称
@@ -218,17 +246,20 @@ class TaskRunner:
         select_cities = ["City158"] + rnd_cities.tolist()
         select_city_idx = pd.Index(select_cities)
         # 使用 loc 方法选择相应的行和列
-        self.select_city_df = select_proveng_city_df.loc[select_city_idx, select_city_idx]
+        self.select_city_df = select_proveng_city_df.loc[
+            select_city_idx, select_city_idx
+        ]
 
     def read_arriving_rate_as_lambd():
-        
+
         arriving_rate_df = pd.read_excel(
             "./data/数据.xlsx", sheet_name="arriving rate", index_col=0
         )
         print(arriving_rate_df.shape)
-        
+
         lambd = np.random.rand(26, 5)  # 生成率参数矩阵
         print(lambd.shape)
+
     def init_a_problem(self, T=7, Z=3, J=10000):
         print("problem init")
         I_citys = 26
@@ -272,15 +303,18 @@ class TaskRunner:
         return s_value
 
 
-
 # %%
+
 
 def process_task(T, Z, J, S_n, problem_n, x_max_task_num):
     VFA_state_values = {}
     task = TaskRunner()
-    s_value, result = task.run(T=T, Z=Z, J=J, S_n=S_n, problem_n=problem_n, x_max_task_num=x_max_task_num)
+    s_value, result = task.run(
+        T=T, Z=Z, J=J, S_n=S_n, problem_n=problem_n, x_max_task_num=x_max_task_num
+    )
     VFA_state_values.update({(T, Z): s_value})
     return result
+
 
 def main():
     J = 10000
@@ -291,16 +325,22 @@ def main():
     result = np.zeros((S_n, problem_n, len(T_values), len(Z_values)))
     x_max_task_num = 3
 
-    task_args = [(T, Z, J, S_n, problem_n, x_max_task_num) for T in T_values for Z in Z_values]
+    task_args = [
+        (T, Z, J, S_n, problem_n, x_max_task_num) for T in T_values for Z in Z_values
+    ]
 
     try:
-        results = thread_map(process_task, task_args, max_workers=4) # 调整 max_workers 根据你的 CPU 核数
-        
+        results = thread_map(
+            process_task, task_args, max_workers=4
+        )  # 调整 max_workers 根据你的 CPU 核数
+
         for i, (T, Z, _, _, _, _) in enumerate(task_args):
             T_idx = T_values.index(T)
             Z_idx = Z_values.index(Z)
             result[:, :, T_idx, Z_idx] = results[i][:, :, 0, 0]
-            
+
     finally:
         # 将结果保存到 CSV 文件
-        save_to_csv(result, T_values, Z_values, S_n, file_name="./data/final/results.csv")
+        save_to_csv(
+            result, T_values, Z_values, S_n, file_name="./data/final/results.csv"
+        )

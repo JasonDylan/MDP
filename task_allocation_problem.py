@@ -1,4 +1,6 @@
 # %%
+import logging
+from util.logging_config import setup_logging
 import csv
 import json
 import os
@@ -6,7 +8,6 @@ import pickle
 import random
 import sys
 from copy import deepcopy
-from functools import partial
 
 import numpy as np
 import pandas as pd
@@ -17,7 +18,7 @@ from task_alloacate_problem import SValue, TaskAllocationProblem
 
 # 装饰器用于计算函数调用时间
 
-
+logger = setup_logging(__name__)
 def save_to_csv(result, T_values, Z_values, S_n, file_name="./data/results.csv"):
     """
     将结果保存到 CSV 文件中。
@@ -67,11 +68,11 @@ class TaskRunner:
         problem_n = 4
         result = np.zeros((S_n, problem_n, len(T_values), len(Z_values)))
         self.init_a_problem(T=7, J=10000)
-        print("sp done")
+        logging.info("sp done")
         for T_idx, T in enumerate(T_values):
             for Z_idx, Z in enumerate(Z_values):
 
-                print(f"-------{(T,Z)=}--------")
+                logging.info(f"-------{(T,Z)=}--------")
                 self.init_a_problem(T=T, J=10000)
                 for S_idx, s in enumerate(self.problem.init_S_J[0:5]):
                     # RA RDA MA
@@ -86,27 +87,27 @@ class TaskRunner:
                     result[S_idx][2][T_idx][Z_idx] = sum(pr2)
                     result[S_idx][3][T_idx][Z_idx] = sum(pr3)
 
-                    print(f"{(S_idx,1,T_idx,Z_idx)=} {result[S_idx][1][T_idx][Z_idx]=}")
-                    print(f"{(S_idx,2,T_idx,Z_idx)=} {result[S_idx][2][T_idx][Z_idx]=}")
-                    print(f"{(S_idx,3,T_idx,Z_idx)=} {result[S_idx][3][T_idx][Z_idx]=}")
+                    logging.info(f"{(S_idx,1,T_idx,Z_idx)=} {result[S_idx][1][T_idx][Z_idx]=}")
+                    logging.info(f"{(S_idx,2,T_idx,Z_idx)=} {result[S_idx][2][T_idx][Z_idx]=}")
+                    logging.info(f"{(S_idx,3,T_idx,Z_idx)=} {result[S_idx][3][T_idx][Z_idx]=}")
 
         save_to_csv(
             result, T_values, Z_values, S_n, file_name="./data/benchmark_results.csv"
         )
-        print(f"----------------------finished benchmark---------------------")
+        logging.info(f"----------------------finished benchmark---------------------")
 
     def run(self, T, Z, J, S_n, problem_n, x_max_task_num) -> SValue:
         # 初始化 result 四维矩阵
         try:
-            print(f"-------{(T,Z)=}--------")
+            logging.info(f"-------{(T,Z)=}--------")
             self.init_a_problem(T=T, Z=Z, J=J)
             s_value = self.run_VFA_task(T=T, Z=Z, J=J)
 
             result = np.zeros((S_n, problem_n, 1, 1))
-            for S_idx, s in enumerate(self.problem.init_S_J[0 : min(J, self.S_n)]):
+            for S_idx, s in enumerate(self.problem.init_S_J[0 : min(J, S_n)]):
                 s_agg = self.problem.func2(s, Z_cluster_num=Z, X=x_max_task_num)
                 result[S_idx][0][0][0] = s_value.get_total_reward(t=0, S_agg=s_agg)
-                print(f"{(S_idx, 0, 0, 0)=} {result[S_idx][0][0][0]=}")
+                logging.info(f"{(T, Z, J)=} {(S_idx, 0, 0, 0)=} {result[S_idx][0][0][0]=}")
 
             # 保存 result 到 CSV 文件
             save_to_csv(
@@ -118,7 +119,7 @@ class TaskRunner:
             )
 
             s_value_memory = sys.getsizeof(s_value)
-            print(f"{(T,Z)=} s_value memory usage: {s_value_memory} bytes")
+            logging.info(f"{(T,Z)=} s_value memory usage: {s_value_memory} bytes")
         finally:
             # 获取文件夹路径
             folder_path = os.path.dirname(f"./data/save_params/s_value_{T}_{Z}_{J}.pkl")
@@ -215,7 +216,7 @@ class TaskRunner:
         )
 
         self.city_distance_df.to_excel(self.PATH_CITY_DIST)
-        print(self.PATH_CITY_DIST)
+        logging.info(self.PATH_CITY_DIST)
 
     def get_select_city_df(self):
         # 挑选出安徽、江苏、浙江和上海的省份及对应的矩阵数据
@@ -255,13 +256,13 @@ class TaskRunner:
         arriving_rate_df = pd.read_excel(
             "./data/数据.xlsx", sheet_name="arriving rate", index_col=0
         )
-        print(arriving_rate_df.shape)
+        logging.info(arriving_rate_df.shape)
 
         lambd = np.random.rand(26, 5)  # 生成率参数矩阵
-        print(lambd.shape)
+        logging.info(lambd.shape)
 
     def init_a_problem(self, T=7, Z=3, J=10000):
-        print("problem init")
+        logging.info("problem init")
         I_citys = 26
         L_levels = 5
         W_workdays = 6
@@ -295,7 +296,7 @@ class TaskRunner:
         )
 
         self.problem.all_task_init(J=J, T=T)
-        print("problem init done")
+        logging.info("problem init done")
 
     @timeit
     def run_VFA_task(self, T=7, Z=3, J=10000) -> SValue:
@@ -306,7 +307,8 @@ class TaskRunner:
 # %%
 
 
-def process_task(T, Z, J, S_n, problem_n, x_max_task_num):
+def process_task(args):
+    T, Z, J, S_n, problem_n, x_max_task_num = args
     VFA_state_values = {}
     task = TaskRunner()
     s_value, result = task.run(
@@ -317,7 +319,7 @@ def process_task(T, Z, J, S_n, problem_n, x_max_task_num):
 
 
 def main():
-    J = 10000
+    J = 5
     S_n = 5
     problem_n = 4
     T_values = [7, 14, 21]
@@ -344,3 +346,7 @@ def main():
         save_to_csv(
             result, T_values, Z_values, S_n, file_name="./data/final/results.csv"
         )
+
+
+if __name__ == "__main__":
+    main()

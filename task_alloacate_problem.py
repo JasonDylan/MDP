@@ -1,4 +1,5 @@
 # %%
+import logging
 import copy
 import csv
 import json
@@ -29,7 +30,7 @@ class SValue:
             S_t_str = str(S_t)
         # caller_frame = inspect.currentframe().f_back
         # caller_name = caller_frame.f_code.co_name
-        # # print(f"{caller_name=} {S_t_str=}")
+        # # logging.info(f"{caller_name=} {S_t_str=}")
         return S_t_str
 
     def init_s_value_t(self, t, S_agg):
@@ -283,7 +284,7 @@ class TaskAllocationProblem:
         ser_info_next = list(zip(ser_info_1, ser_info_2))
         S_next = (n_next, ser_info_next)
 
-        # print(S_next[1][39][1])
+        # logging.info(S_next[1][39][1])
         # S_next_agg = lp_aggreg(S_next, Z_cluster_num, X, M_servers, I_citys, L_levels)
 
         prob += (
@@ -350,7 +351,7 @@ class TaskAllocationProblem:
                 try:
                     prob += y[m, self.H_home_of_server[m], 0] == 1
                 except Exception as ex:
-                    print(f"{ex=} {m=} {self.H_home_of_server=} {self.L_server=} {S=}")
+                    logging.info(f"{ex=} {m=} {self.H_home_of_server=} {self.L_server=} {S=}")
                     raise ex
             elif wm > 0:
 
@@ -454,7 +455,7 @@ class TaskAllocationProblem:
         c2 = self.c2
         r1 = self.r1
         L_max_set = [max(l) for l in mathcal_L]  # 最大等级
-        # print("M_servers, I_citys, self.L_levels, N_1, N_2, mathcal_L, mathscr_L", M_servers, I_citys, L_max_set, N_1, N_2, mathcal_L, mathscr_L)
+        # logging.info("M_servers, I_citys, self.L_levels, N_1, N_2, mathcal_L, mathscr_L", M_servers, I_citys, L_max_set, N_1, N_2, mathcal_L, mathscr_L)
         # 步骤1:安排放假的员工回家
         C_h = sum(
             c1[servers_info[m][0]][H_home_of_server[m] - 1]
@@ -469,7 +470,7 @@ class TaskAllocationProblem:
         Y_set = []
         # 步骤2:对每个等级类独立进行员工分配
         for L_set, l_max_L in zip(mathcal_L, L_max_set):
-            # print("L_set ", L_set)
+            # logging.info("L_set ", L_set)
             M_servers_L = [
                 m
                 for m in range(M_servers)
@@ -478,7 +479,7 @@ class TaskAllocationProblem:
             I_citys_L = [
                 i for i in range(I_citys) if any(n_il[i][l - 1] > 0 for l in L_set)
             ]  # 该等级类下有任务需求的城市集合
-            # print("M_servers_L, I_citys_L", M_servers_L, I_citys_L)
+            # logging.info("M_servers_L, I_citys_L", M_servers_L, I_citys_L)
             # 创建问题实例
             prob = pulp.LpProblem(
                 f"Optimal_Server_Assignment_Level_{L_set}", pulp.LpMaximize
@@ -753,7 +754,7 @@ class TaskAllocationProblem:
             # 逆序计算每日的总收益
             for t in range(T - 1, -1, -1):
                 total_reward[t] += sum(pr[t:])
-            print(f"{location=}")
+            logging.info(f"{location=}")
             # 更新s_value中的总收益值
             for i in location:
                 i_t = location.index(i)
@@ -776,7 +777,7 @@ class TaskAllocationProblem:
         T = T
         s_value = SValue(T)
         Z = Z_cluster_num
-        print(f"{(T,Z)=} {len(self.task_arr)=}")
+        logging.info(f"{(T,Z)=} {len(self.task_arr)=}")
         for j in range(J):
             pr = T * [0]
             for t in range(T):
@@ -806,7 +807,7 @@ class TaskAllocationProblem:
             s_value.update_total_rewards(total_reward)
 
             len_state = len(s_value.s_values[0].keys())
-            print(f"-------{(T,Z)=} {j=} {t=} {len_state=} {total_reward=}------")
+            logging.info(f"-------{(T,Z)=} {j=} {t=} {len_state=} {total_reward=}------")
 
         return s_value
 
@@ -820,7 +821,7 @@ class TaskAllocationProblem:
         np.random.seed(42)  # 生成初始状态S
         self.init_S_J = [self.func1() for j in range(J)]
         for i in range(min(5, J)):
-            self.save_to_one_csv(self.init_S_J[i], csv_path=f"init/init_state_{i}.csv")
+            self.save_to_one_csv(self.init_S_J[i], csv_path=f"init/init_state_{i}_{T}_{J}.csv")
 
     def calc_total_reward_for_init_S_by_rnd(self, init_S, T=7):
         """
@@ -931,7 +932,7 @@ class TaskAllocationProblem:
                     for l in range(L_levels)
                     if n_il[i][l] > 0 and l+1 >= L_server[m]
                 ]
-                # print(f"{available_tasks=}")
+                # logging.info(f"{available_tasks=}")
                 if available_tasks:
                     # 找到距离最近的任务
                     nearest_task = min(
@@ -941,8 +942,8 @@ class TaskAllocationProblem:
                     
                     i_nearest, l_nearest = nearest_task
                     allocation[m] = (m, i_nearest, l_nearest)
-                    # print(f"{m=} {nearest_task=}")    
-                    # print(f"{allocation[m]=} {n_il[i_nearest]=} {servers_info[m]=}")
+                    # logging.info(f"{m=} {nearest_task=}")    
+                    # logging.info(f"{allocation[m]=} {n_il[i_nearest]=} {servers_info[m]=}")
                 
                     n_il[i_nearest][l_nearest-1] -= 1
                 else:
@@ -1062,7 +1063,7 @@ class TaskAllocationProblem:
                 try:
                     prob += y[m, self.H_home_of_server[m], 0] == 1
                 except Exception as ex:
-                    print(f"{ex=} {m=} {self.H_home_of_server=} {self.L_server=} {S=}")
+                    logging.info(f"{ex=} {m=} {self.H_home_of_server=} {self.L_server=} {S=}")
                     raise ex
             elif wm > 0:
 
@@ -1136,7 +1137,7 @@ class TaskAllocationProblem:
         cost1 = 0
 
         for m in range(M_servers):
-            # print(f"{servers_info[m][0]=} {A[m][1]=}")
+            # logging.info(f"{servers_info[m][0]=} {A[m][1]=}")
             cost1 += self.c1[servers_info[m][0]][A[m][1]] # c1 是服务器在不同任务和等级上的成本矩阵
         # 计算第二个成本
         cost2 = 0
@@ -1151,11 +1152,11 @@ class TaskAllocationProblem:
         cost2 = self.c2 * np.sum(S_A)
         profit = reward - cost1 - cost2
         if cost2<0:
-            print(f"{cost2=}{A=}\n{n_il=}\n{n_il_format=}\n{S_A=}")
+            logging.info(f"cost2<0: {cost2=}{A=}\n{n_il=}\n{n_il_format=}\n{S_A=}")
         
-        print(f"{reward=}-{cost1=}-{cost2=}={profit=}")
+        logging.info(f"{reward=}-{cost1=}-{cost2=}={profit=}")
         if int(reward) == 0:
-            print(f"{S=}\n{A=}")
+            logging.info(f" int(reward) == 0 {S=}\n{A=}")
         return profit
 
     def single_stage(self, init_S):

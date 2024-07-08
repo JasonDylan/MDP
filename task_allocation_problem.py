@@ -104,8 +104,10 @@ class TaskRunner:
             s_value = self.run_VFA_task(T=T, Z=Z, J=J)
 
             result = np.zeros((S_n, problem_n, 1, 1))
+            logging.info(f"done {self.problem.init_S_J[:5]}")
             for S_idx, s in enumerate(self.problem.init_S_J[0 : min(J, S_n)]):
                 s_agg = self.problem.func2(s, Z_cluster_num=Z, X=x_max_task_num)
+                logging.info(f"{s_agg=}")
                 result[S_idx][0][0][0] = s_value.get_total_reward(t=0, S_agg=s_agg)
                 logging.info(f"{(T, Z, J)=} {(S_idx, 0, 0, 0)=} {result[S_idx][0][0][0]=}")
 
@@ -317,6 +319,53 @@ def process_task(args):
     VFA_state_values.update({(T, Z): s_value})
     return result
 
+def test():
+    J = 5
+    S_n = 5
+    problem_n = 4
+    T_values = [7, 14, 21]
+    Z_values = [3, 5, 9]
+    result = np.zeros((S_n, problem_n, len(T_values), len(Z_values)))
+    x_max_task_num = 5
+
+    task_args = [
+        (T, Z, J, S_n, problem_n, x_max_task_num) for T in T_values for Z in Z_values
+    ]
+    from numpy import array
+    
+    task = TaskRunner()
+    task.init_a_problem(T=7, Z=3, J=5)
+    S1 = (array([[0, 3, 0, 0, 1],
+       [0, 0, 2, 0, 0],
+       [0, 1, 0, 0, 0],
+       [0, 0, 0, 1, 0],
+       [1, 0, 0, 0, 3],
+       [0, 0, 0, 0, 0],
+       [0, 1, 0, 0, 1],
+       [0, 2, 0, 2, 0],
+       [0, 0, 0, 0, 1],
+       [0, 0, 0, 1, 1],
+       [0, 0, 3, 0, 0],
+       [0, 0, 0, 0, 0],
+       [0, 0, 2, 0, 0],
+       [1, 0, 1, 0, 1],
+       [0, 0, 0, 0, 1],
+       [0, 0, 0, 0, 0],
+       [0, 0, 2, 0, 1],
+       [1, 2, 0, 0, 0],
+       [0, 1, 1, 0, 0],
+       [0, 1, 0, 0, 0],
+       [1, 0, 0, 0, 0],
+       [0, 0, 1, 0, 0],
+       [0, 0, 2, 2, 1],
+       [1, 1, 1, 0, 0],
+       [1, 0, 0, 0, 0],
+       [0, 1, 1, 0, 0]]), [(9, 5), (6, 2), (15, 3), (15, 1), (19, 0), (16, 3), (0, 1), (11, 5), (4, 4), (22, 2), (8, 0), (18, 2), (19, 2), (23, 5), (23, 0), (10, 3), (7, 0), (5, 3), (2, 3), (24, 5), (24, 2), (17, 4), (17, 5), (21, 1), (15, 2), (8, 4), (0, 3), (0, 3), (20, 5), (23, 3), (16, 2), (15, 0), (18, 3), (22, 5), (13, 5), (5, 5), (12, 5), (21, 2), (1, 2), (0, 4)])
+    S_agg = task.problem.func2(S1, Z_cluster_num=3, X=3)
+    print(f"final {S_agg=}")
+    print("(T, Z, J, S_n, problem_n, x_max_task_num)", task_args[0])
+    process_task(task_args[0])
+    
 
 def main():
     J = 5
@@ -333,7 +382,7 @@ def main():
 
     try:
         results = thread_map(
-            process_task, task_args, max_workers=4
+            process_task, task_args, max_workers=1
         )  # 调整 max_workers 根据你的 CPU 核数
 
         for i, (T, Z, _, _, _, _) in enumerate(task_args):
@@ -349,4 +398,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    test()

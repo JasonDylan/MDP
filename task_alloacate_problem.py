@@ -788,6 +788,7 @@ class TaskAllocationProblem:
                     S = S_next
                 # 聚合当前状态S，生成聚合状态S_agg
                 S_agg = self.func2(S, Z_cluster_num, X)
+                logging.info(f"{j=} {t=} {S_agg=}")
                 if j == 0:
                     # 对于第一轮迭代，将初始状态S_agg添加到s_value列表中
                     s_value.init_s_value_t(t, S_agg)
@@ -805,7 +806,7 @@ class TaskAllocationProblem:
             for t in range(T - 1, -1, -1):
                 total_reward[t] = sum(pr[t:])
             s_value.update_total_rewards(total_reward)
-
+            logging.info(f"{s_value.s_values=}")
             len_state = len(s_value.s_values[0].keys())
             logging.info(f"-------{(T,Z)=} {j=} {t=} {len_state=} {total_reward=}------")
 
@@ -820,6 +821,7 @@ class TaskAllocationProblem:
         random.seed(42)
         np.random.seed(42)  # 生成初始状态S
         self.init_S_J = [self.func1() for j in range(J)]
+        logging.info(f"init {self.init_S_J[:5]}")
         for i in range(min(5, J)):
             self.save_to_one_csv(self.init_S_J[i], csv_path=f"init/init_state_{i}_{T}_{J}.csv")
 

@@ -96,7 +96,7 @@ class TaskRunner:
         )
         logging.info(f"----------------------finished benchmark---------------------")
 
-    def run(self, T, Z, J, S_n, problem_n, x_max_task_num) -> SValue:
+    def run(self, T, Z, J, S_n, problem_n, X_max_task_num) -> SValue:
         # 初始化 result 四维矩阵
         try:
             logging.info(f"-------{(T,Z)=}--------")
@@ -106,7 +106,7 @@ class TaskRunner:
             result = np.zeros((S_n, problem_n, 1, 1))
             logging.info(f"done {self.problem.init_S_J[:5]}")
             for S_idx, s in enumerate(self.problem.init_S_J[0 : min(J, S_n)]):
-                s_agg = self.problem.func2(s, Z_cluster_num=Z, X=x_max_task_num)
+                s_agg = self.problem.func2(s, Z_cluster_num=Z, X_max_task_num=X_max_task_num)
                 logging.info(f"{s_agg=}")
                 result[S_idx][0][0][0] = s_value.get_total_reward(t=0, S_agg=s_agg)
                 logging.info(f"{(T, Z, J)=} {(S_idx, 0, 0, 0)=} {result[S_idx][0][0][0]=}")
@@ -269,7 +269,7 @@ class TaskRunner:
         L_levels = 5
         W_workdays = 6
         M_servers = 40
-        x_max_task_num = 2
+        X_max_task_num = 2
         random.seed(42)
         np.random.seed(42)
         H_home_of_server = [random.randint(1, I_citys) - 1 for _ in range(M_servers)]
@@ -286,7 +286,7 @@ class TaskRunner:
             L_levels=L_levels,
             W_workdays=W_workdays,
             M_servers=M_servers,
-            x_max_task_num=x_max_task_num,
+            X_max_task_num=X_max_task_num,
             H_home_of_server=H_home_of_server,
             lambd=lambd,
             T=T,
@@ -310,11 +310,11 @@ class TaskRunner:
 
 
 def process_task(args):
-    T, Z, J, S_n, problem_n, x_max_task_num = args
+    T, Z, J, S_n, problem_n, X_max_task_num = args
     VFA_state_values = {}
     task = TaskRunner()
     s_value, result = task.run(
-        T=T, Z=Z, J=J, S_n=S_n, problem_n=problem_n, x_max_task_num=x_max_task_num
+        T=T, Z=Z, J=J, S_n=S_n, problem_n=problem_n, X_max_task_num=X_max_task_num
     )
     VFA_state_values.update({(T, Z): s_value})
     return result
@@ -326,10 +326,10 @@ def test():
     T_values = [7, 14, 21]
     Z_values = [3, 5, 9]
     result = np.zeros((S_n, problem_n, len(T_values), len(Z_values)))
-    x_max_task_num = 5
+    X_max_task_num = 5
 
     task_args = [
-        (T, Z, J, S_n, problem_n, x_max_task_num) for T in T_values for Z in Z_values
+        (T, Z, J, S_n, problem_n, X_max_task_num) for T in T_values for Z in Z_values
     ]
     from numpy import array
     
@@ -361,9 +361,9 @@ def test():
        [1, 1, 1, 0, 0],
        [1, 0, 0, 0, 0],
        [0, 1, 1, 0, 0]]), [(9, 5), (6, 2), (15, 3), (15, 1), (19, 0), (16, 3), (0, 1), (11, 5), (4, 4), (22, 2), (8, 0), (18, 2), (19, 2), (23, 5), (23, 0), (10, 3), (7, 0), (5, 3), (2, 3), (24, 5), (24, 2), (17, 4), (17, 5), (21, 1), (15, 2), (8, 4), (0, 3), (0, 3), (20, 5), (23, 3), (16, 2), (15, 0), (18, 3), (22, 5), (13, 5), (5, 5), (12, 5), (21, 2), (1, 2), (0, 4)])
-    S_agg = task.problem.func2(S1, Z_cluster_num=3, X=3)
+    S_agg = task.problem.func2(S1, Z_cluster_num=3, X_max_task_num=3)
     print(f"final {S_agg=}")
-    print("(T, Z, J, S_n, problem_n, x_max_task_num)", task_args[0])
+    print("(T, Z, J, S_n, problem_n, X_max_task_num)", task_args[0])
     process_task(task_args[0])
     
 
@@ -374,10 +374,10 @@ def main():
     T_values = [7, 14, 21]
     Z_values = [3, 5, 9]
     result = np.zeros((S_n, problem_n, len(T_values), len(Z_values)))
-    x_max_task_num = 3
+    X_max_task_num = 3
 
     task_args = [
-        (T, Z, J, S_n, problem_n, x_max_task_num) for T in T_values for Z in Z_values
+        (T, Z, J, S_n, problem_n, X_max_task_num) for T in T_values for Z in Z_values
     ]
 
     try:

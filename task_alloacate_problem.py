@@ -85,7 +85,7 @@ class TaskAllocationProblem:
         L_levels,
         W_workdays,
         M_servers,
-        x_max_task_num,
+        X_max_task_num,
         H_home_of_server,
         lambd,
         T,
@@ -99,7 +99,7 @@ class TaskAllocationProblem:
         self.L_levels = L_levels
         self.W_workdays = W_workdays
         self.M_servers = M_servers
-        self.x_max_task_num = x_max_task_num
+        self.X_max_task_num = X_max_task_num
         self.H_home_of_server = H_home_of_server
         self.lambd = lambd
         self.T = T
@@ -112,7 +112,7 @@ class TaskAllocationProblem:
     
         
     def func1(self):
-        # generate_state(I_citys, L_levels, W_workdays, M_servers, x_max_task_num, H_home_of_server, lambd):
+        # generate_state(I_citys, L_levels, W_workdays, M_servers, X_max_task_num, H_home_of_server, lambd):
 
         n_il = np.zeros((self.I_citys, self.L_levels), dtype=int)
         for i_city in range(self.I_citys):
@@ -188,8 +188,8 @@ class TaskAllocationProblem:
 
         return result
 
-    def func2(self, S, Z_cluster_num, X):
-        # aggreg_state(S, Z_cluster_num, X, M_servers, I_citys, L_levels):
+    def func2(self, S, Z_cluster_num, X_max_task_num):
+        # aggreg_state(S, Z_cluster_num, X_max_task_num, M_servers, I_citys, L_levels):
         barM = np.sum(
             [1 for m_server in range(self.M_servers) if S[1][m_server][1] != 0]
         )
@@ -218,7 +218,7 @@ class TaskAllocationProblem:
         for z_cluster in range(num_cluster):
             for l in range(self.L_levels):
                 N[z_cluster][l] = min(
-                    X,
+                    X_max_task_num,
                     np.sum(
                         [S[0][i - 1][l] for i in cluster[z_cluster]]
                     ),  # todo 这里i是否应该-1？
@@ -285,7 +285,7 @@ class TaskAllocationProblem:
         S_next = (n_next, ser_info_next)
 
         # logging.info(S_next[1][39][1])
-        # S_next_agg = lp_aggreg(S_next, Z_cluster_num, X, M_servers, I_citys, L_levels)
+        # S_next_agg = lp_aggreg(S_next, Z_cluster_num, X_max_task_num, M_servers, I_citys, L_levels)
 
         prob += (
             pulp.lpSum(
@@ -673,8 +673,8 @@ class TaskAllocationProblem:
     def func7(self, T):
         # 生成了每日新到达的任务?
         # T: 表示时间周期，例如天数
-        # x_max_task_num: 矩阵元素的最大取值
-        # lambda_il: 泊松分布的率参数矩阵 (I_citys x_max_task_num L_levels)
+        # X_max_task_num: 矩阵元素的最大取值
+        # lambda_il: 泊松分布的率参数矩阵 (I_citys X_max_task_num L_levels)
 
         # 获取 lambda_il 的维度为 I_citys 和 L_levels
         I_citys, L_levels = self.lambda_il.shape
@@ -682,19 +682,19 @@ class TaskAllocationProblem:
         # 初始化三维数组
         arriving_tasks_i = np.zeros((T, I_citys, L_levels), dtype=int)
 
-        # 生成每个时间步的 I_citys x_max_task_num L_levels 矩阵
+        # 生成每个时间步的 I_citys X_max_task_num L_levels 矩阵
         for t in range(T):
             for i in range(I_citys):
                 for l in range(L_levels):
                     # 使用泊松分布生成矩阵元素
                     arriving_tasks_i[t, i, l] = min(
-                        np.random.poisson(self.lambda_il[i, l]), self.x_max_task_num
+                        np.random.poisson(self.lambda_il[i, l]), self.X_max_task_num
                     )
 
         return arriving_tasks_i
 
     def func8_org(self, T=7, J=1000, Z_cluster_num=3):
-        X = self.x_max_task_num
+        X_max_task_num = self.X_max_task_num
         # 目前适配了自动生成每个benchmark相同的到达任务和，初始化J个初始S
         # 初始化s_value列表，用于存储状态的信息
         s_value = []
@@ -717,7 +717,7 @@ class TaskAllocationProblem:
                     # 使用上一轮的状态作为当前状态S
                     S = S_next
                 # 聚合当前状态S，生成聚合状态S_agg
-                S_agg = self.func2(S, Z_cluster_num, X)
+                S_agg = self.func2(S, Z_cluster_num, X_max_task_num)
                 if j == 0:
                     # 对于第一轮迭代，将初始状态S_agg添加到s_value列表中
                     s_value.append([t, 1, S_agg, 0])
@@ -773,7 +773,7 @@ class TaskAllocationProblem:
         return s_value
 
     def func8(self, T=7, J=10000, Z_cluster_num=3):
-        X = self.x_max_task_num
+        X_max_task_num = self.X_max_task_num
         T = T
         s_value = SValue(T)
         Z = Z_cluster_num
@@ -787,7 +787,7 @@ class TaskAllocationProblem:
                 else:
                     S = S_next
                 # 聚合当前状态S，生成聚合状态S_agg
-                S_agg = self.func2(S, Z_cluster_num, X)
+                S_agg = self.func2(S, Z_cluster_num, X_max_task_num)
                 logging.info(f"{j=} {t=} {S_agg=}")
                 if j == 0:
                     # 对于第一轮迭代，将初始状态S_agg添加到s_value列表中
@@ -1103,7 +1103,7 @@ class TaskAllocationProblem:
         return obj, result
 
     def static_optimal(self, init_S, T=7):
-        # static_optimal(I_citys, L_levels, W_workdays, M_servers, x_max_task_num, H_home_of_server, lambd,\
+        # static_optimal(I_citys, L_levels, W_workdays, M_servers, X_max_task_num, H_home_of_server, lambd,\
         #             T, lambda_il, L_server, r1, c1, c2):
         task_arr = self.task_arr
         pr = T * [0]

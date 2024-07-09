@@ -96,7 +96,7 @@ class TaskRunner:
         )
         logging.info(f"----------------------finished benchmark---------------------")
 
-    def run(self, T, Z, J, S_n, problem_n, X_max_task_num) -> SValue:
+    def run(self, T, Z, J, S_n, problem_n) -> SValue:
         # 初始化 result 四维矩阵
         try:
             logging.info(f"-------{(T,Z)=}--------")
@@ -106,7 +106,7 @@ class TaskRunner:
             result = np.zeros((S_n, problem_n, 1, 1))
             logging.info(f"done {self.problem.init_S_J[:5]}")
             for S_idx, s in enumerate(self.problem.init_S_J[0 : min(J, S_n)]):
-                s_agg = self.problem.func2(s, Z_cluster_num=Z, X_max_task_num=X_max_task_num)
+                s_agg = self.problem.func2(s, Z_cluster_num=Z, X_max_task_num=self.problem.X_max_task_num)
                 logging.info(f"{s_agg=}")
                 result[S_idx][0][0][0] = s_value.get_total_reward(t=0, S_agg=s_agg)
                 logging.info(f"{(T, Z, J)=} {(S_idx, 0, 0, 0)=} {result[S_idx][0][0][0]=}")
@@ -147,129 +147,13 @@ class TaskRunner:
                 json.dump(s_value.s_values, file, indent=4)
         return s_value, result
 
-    def get_proveng_city_dist_mat_df(self):
-        self.proveng_city_dist_mat_df = pd.read_excel(
-            self.DIST_MATRIX_PATH,
-            sheet_name="地理距离矩阵",
-        )
-
-    def get_city_series_to_city_dict(self):
-        self.city_series_to_city_dict = (
-            self.proveng_city_dist_mat_df[["cityeng", "cityseries"]]
-            .drop_duplicates()
-            .set_index("cityseries")["cityeng"]
-            .to_dict()
-        )
-
-    def get_city_2_proveng_dict(self):
-        self.city_to_proveng_dict = (
-            self.proveng_city_dist_mat_df[["cityeng", "proveng"]]
-            .drop_duplicates()
-            .set_index("cityeng")["proveng"]
-            .to_dict()
-        )
-
-    def get_dist_mat_from_xls_df(
-        self,
-    ):
-        self.distance_mat = self.proveng_city_dist_mat_df.iloc[
-            :, self.distance_mat_start_idx :
-        ]
-        self.distance_mat.index = self.proveng_city_dist_mat_df.iloc[
-            :, self.cityseries_idx
-        ].values
-        self.distance_mat.columns = self.proveng_city_dist_mat_df.iloc[
-            :, self.cityseries_idx
-        ].values
-
-    def generate_city(self):
-        """本函数功能，生成指定数量城市的城市距离矩阵，必然包含上海。
-        返回的dataframe包含城市坐标和省份坐标/和一个城市转省份的dict"""
-
-        # 地理距离矩阵xls
-        self.get_proveng_city_dist_mat_df()
-        # 从第四列开始，是距离矩阵内容
-        self.proveng_idx = 0
-        self.cityeng = 1
-        self.cityseries_idx = 2
-        self.distance_mat_start_idx = 3
-
-        self.get_city_series_to_city_dict()
-        self.get_city_2_proveng_dict()
-
-        # 地理距离矩阵xls 第三列是城市id, city_*, 设定纵坐标
-        self.get_dist_mat_from_xls_df()
-        self.get_select_city_df()
-
-        city_series_columns = self.select_city_df.columns
-        city_columns = [
-            (
-                self.city_to_proveng_dict[self.city_series_to_city_dict[item]],
-                self.city_series_to_city_dict[item],
-            )
-            for item in city_series_columns
-        ]  # 最为新矩阵的idx和col
-
-        column_names = ["proveng", "cityeng"]  # 给idx的idx
-        self.city_distance_df = pd.DataFrame(
-            self.select_city_df.values,
-            index=pd.MultiIndex.from_tuples(city_columns, names=column_names),
-            columns=pd.MultiIndex.from_tuples(city_columns, names=column_names),
-        )
-
-        self.city_distance_df.to_excel(self.PATH_CITY_DIST)
-        logging.info(self.PATH_CITY_DIST)
-
-    def get_select_city_df(self):
-        # 挑选出安徽、江苏、浙江和上海的省份及对应的矩阵数据
-        select_proveng = [
-            "Anhui",
-            "Jiangsu",
-            "Zhejiang",
-            "Shanghai",
-        ]  # TODO 可能要换省份
-        provengs = self.proveng_city_dist_mat_df.iloc[
-            :, self.proveng_idx
-        ].values  # 表格第一列为城市名称
-        select_proveng_idxs = [
-            i for i, prov in enumerate(provengs) if prov in select_proveng
-        ]  # xls里选取指定的省份的idx，是字母
-        select_cityeng_idxs = self.proveng_city_dist_mat_df.values[
-            select_proveng_idxs, self.cityseries_idx
-        ]  # xls指定省份对应的城市id
-        select_idx = pd.Index(select_cityeng_idxs)  # 创建对应索引
-        # 使用 loc 方法选择相应的行和列
-        select_proveng_city_df = self.distance_mat.loc[select_idx, select_idx]
-
-        # 从城市列表中随机选择city_num-1个城市（不包括上海）
-        rnd_cities = np.random.choice(
-            select_cityeng_idxs[1:], self.city_num - 1, replace=False
-        )  # 第一列为上海，所以从1开始
-        # 将上海添加到随机选择的城市列表中 # City158 = shanghai
-        select_cities = ["City158"] + rnd_cities.tolist()
-        select_city_idx = pd.Index(select_cities)
-        # 使用 loc 方法选择相应的行和列
-        self.select_city_df = select_proveng_city_df.loc[
-            select_city_idx, select_city_idx
-        ]
-
-    def read_arriving_rate_as_lambd():
-
-        arriving_rate_df = pd.read_excel(
-            "./data/数据.xlsx", sheet_name="arriving rate", index_col=0
-        )
-        logging.info(arriving_rate_df.shape)
-
-        lambd = np.random.rand(26, 5)  # 生成率参数矩阵
-        logging.info(lambd.shape)
-
     def init_a_problem(self, T=7, Z=3, J=10000):
         logging.info("problem init")
         I_citys = 26
         L_levels = 5
         W_workdays = 6
         M_servers = 40
-        X_max_task_num = 2
+        X_max_task_num = 3
         random.seed(42)
         np.random.seed(42)
         H_home_of_server = [random.randint(1, I_citys) - 1 for _ in range(M_servers)]
@@ -310,11 +194,11 @@ class TaskRunner:
 
 
 def process_task(args):
-    T, Z, J, S_n, problem_n, X_max_task_num = args
+    T, Z, J, S_n, problem_n = args
     VFA_state_values = {}
     task = TaskRunner()
     s_value, result = task.run(
-        T=T, Z=Z, J=J, S_n=S_n, problem_n=problem_n, X_max_task_num=X_max_task_num
+        T=T, Z=Z, J=J, S_n=S_n, problem_n=problem_n
     )
     VFA_state_values.update({(T, Z): s_value})
     return result
@@ -326,10 +210,9 @@ def test():
     T_values = [7, 14, 21]
     Z_values = [3, 5, 9]
     result = np.zeros((S_n, problem_n, len(T_values), len(Z_values)))
-    X_max_task_num = 5
 
     task_args = [
-        (T, Z, J, S_n, problem_n, X_max_task_num) for T in T_values for Z in Z_values
+        (T, Z, J, S_n, problem_n,) for T in T_values for Z in Z_values
     ]
     from numpy import array
     
@@ -361,9 +244,9 @@ def test():
        [1, 1, 1, 0, 0],
        [1, 0, 0, 0, 0],
        [0, 1, 1, 0, 0]]), [(9, 5), (6, 2), (15, 3), (15, 1), (19, 0), (16, 3), (0, 1), (11, 5), (4, 4), (22, 2), (8, 0), (18, 2), (19, 2), (23, 5), (23, 0), (10, 3), (7, 0), (5, 3), (2, 3), (24, 5), (24, 2), (17, 4), (17, 5), (21, 1), (15, 2), (8, 4), (0, 3), (0, 3), (20, 5), (23, 3), (16, 2), (15, 0), (18, 3), (22, 5), (13, 5), (5, 5), (12, 5), (21, 2), (1, 2), (0, 4)])
-    S_agg = task.problem.func2(S1, Z_cluster_num=3, X_max_task_num=3)
+    S_agg = task.problem.func2(S1, Z_cluster_num=3, X_max_task_num=task.problem.X_max_task_num)
     print(f"final {S_agg=}")
-    print("(T, Z, J, S_n, problem_n, X_max_task_num)", task_args[0])
+    print("(T, Z, J, S_n, problem_n,)", task_args[0])
     process_task(task_args[0])
     
 
@@ -374,10 +257,9 @@ def main():
     T_values = [7, 14, 21]
     Z_values = [3, 5, 9]
     result = np.zeros((S_n, problem_n, len(T_values), len(Z_values)))
-    X_max_task_num = 3
 
     task_args = [
-        (T, Z, J, S_n, problem_n, X_max_task_num) for T in T_values for Z in Z_values
+        (T, Z, J, S_n, problem_n) for T in T_values for Z in Z_values
     ]
 
     try:

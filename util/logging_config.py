@@ -5,7 +5,7 @@ import logging.handlers
 import os
 
 
-def setup_logging(caller_dir_name=None):
+def setup_logging(caller_dir_name=None, process_id = 0):
     # 创建日志记录器
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
@@ -33,7 +33,7 @@ def setup_logging(caller_dir_name=None):
     if not os.path.exists(log_folder):
         os.makedirs(log_folder)
 
-    log_filename = f"a.log"
+    log_filename = f"process_{process_id}.log"
     log_file_path = os.path.join(log_folder, log_filename)
 
     # 使用 TimedRotatingFileHandler，每小时切割一次日志文件，保留最近 7 天的日志文件

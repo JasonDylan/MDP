@@ -1,4 +1,5 @@
 # %%
+from tqdm import tqdm
 import logging
 import copy
 import csv
@@ -43,7 +44,9 @@ class SValue:
         if t in self.s_values:
             tuple_s_agg = self._convert_to_tuple(S_agg)
             if tuple_s_agg in self.s_values[t]:
-                return self.s_values[t][tuple_s_agg]["count"]
+                count = self.s_values[t][tuple_s_agg]["count"]
+                # logging.info(f"{t=} {count=}")
+                return count
             else:
                 self.init_s_value_t(t, S_agg)
         else:
@@ -54,7 +57,9 @@ class SValue:
         if t in self.s_values:
             tuple_s_agg = self._convert_to_tuple(S_agg)
             if tuple_s_agg in self.s_values[t]:
-                return self.s_values[t][tuple_s_agg]["total_reward"]
+                total_reward = self.s_values[t][tuple_s_agg]["total_reward"]
+                # logging.info(f"{t=} {total_reward=}")
+                return total_reward
             else:
                 self.init_s_value_t(t, S_agg)
         else:
@@ -94,6 +99,7 @@ class TaskAllocationProblem:
         r1,
         c1,
         c2,
+        Z_cluster_num,
     ):
         self.I_citys = I_citys
         self.L_levels = L_levels
@@ -108,6 +114,7 @@ class TaskAllocationProblem:
         self.r1 = r1
         self.c1 = c1
         self.c2 = c2
+        self.Z_cluster_num = Z_cluster_num
 
     
         
@@ -187,12 +194,12 @@ class TaskAllocationProblem:
 
         return result
 
-    def func2(self, S, Z_cluster_num):
+    def func2(self, S,):
         barM = np.sum(
             [1 for m_server in range(self.M_servers) if S[1][m_server][1] != 0]
         )
-        cluster = self.split_list(self.I_citys, Z_cluster_num)
-        num_cluster = np.ceil(self.I_citys / Z_cluster_num).astype(int)
+        cluster = self.split_list(self.I_citys, self.Z_cluster_num)
+        num_cluster = np.ceil(self.I_citys / self.Z_cluster_num).astype(int)
         g = np.zeros(num_cluster)
 
         for z_cluster in range(num_cluster):
@@ -712,7 +719,7 @@ class TaskAllocationProblem:
                     # 使用上一轮的状态作为当前状态S
                     S = S_next
                 # 聚合当前状态S，生成聚合状态S_agg
-                S_agg = self.func2(S, Z_cluster_num, self.X_max_task_num)
+                S_agg = self.func2(S,)
                 if j == 0:
                     # 对于第一轮迭代，将初始状态S_agg添加到s_value列表中
                     s_value.append([t, 1, S_agg, 0])
@@ -767,12 +774,11 @@ class TaskAllocationProblem:
 
         return s_value
 
-    def func8(self, T=7, J=10000, Z_cluster_num=3):
+    def func8(self, T=7, J=10000, Process_id=0):
         T = T
         s_value = SValue(T)
-        Z = Z_cluster_num
-        logging.info(f"{(T,Z)=} {len(self.task_arr)=}")
-        for j in range(J):
+        logging.info(f"{(T,self.Z_cluster_num)=} {len(self.task_arr)=}")
+        for j in tqdm(range(J), desc=f"{Process_id=} {(T, self.Z_cluster_num)=} j/{J=}", position=Process_id):
             pr = T * [0]
             for t in range(T):
                 if t == 0:
@@ -781,8 +787,8 @@ class TaskAllocationProblem:
                 else:
                     S = S_next
                 # 聚合当前状态S，生成聚合状态S_agg
-                S_agg = self.func2(S, Z_cluster_num, self.X_max_task_num)
-                logging.info(f"{j=} {t=} {S_agg=}")
+                S_agg = self.func2(S,)
+                # logging.info(f"{j=} {t=} {S_agg=}")
                 if j == 0:
                     # 对于第一轮迭代，将初始状态S_agg添加到s_value列表中
                     s_value.init_s_value_t(t, S_agg)
@@ -792,6 +798,9 @@ class TaskAllocationProblem:
                     # 如果存在，则将该位置添加到位置列表和转移位置列表中，并获取对应的总收益V
                     # 如果不存在，则将当前状态S_agg添加到s_value列表中
                     V = s_value.get_total_reward(t, S_agg)
+
+                if V > 0:
+                    logging.info(f"{(T,J,self.Z_cluster_num,j,t)=}")
                 A = self.func3_transfer(S, V)
                 pr[t] = self.Profit(S, A)
                 xi = self.task_arr[t]
@@ -800,9 +809,11 @@ class TaskAllocationProblem:
             for t in range(T - 1, -1, -1):
                 total_reward[t] = sum(pr[t:])
             s_value.update_total_rewards(total_reward)
-            logging.info(f"{s_value.s_values=}")
+            # logging.info(f"{s_value.s_values=}")
             len_state = len(s_value.s_values[0].keys())
-            logging.info(f"-------{(T,Z)=} {j=} {t=} {len_state=} {total_reward=}------")
+            logging.info(f"-------{(T,self.Z_cluster_num)=} {j=} {t=} {len_state=} {total_reward=}------")
+            if j!= len_state-1:
+                logging.info(f"!!!!!!!{(T,self.Z_cluster_num)=} {j=} {t=} {len_state=} !!!!!!! ")
 
         return s_value
 
@@ -815,7 +826,7 @@ class TaskAllocationProblem:
         random.seed(42)
         np.random.seed(42)  # 生成初始状态S
         self.init_S_J = [self.func1() for j in range(J)]
-        logging.info(f"init {self.init_S_J[:5]}")
+        # logging.info(f"init {self.init_S_J[:5]}")
         for i in range(min(5, J)):
             self.save_to_one_csv(self.init_S_J[i], csv_path=f"init/init_state_{i}_{T}_{J}.csv")
 
@@ -1148,7 +1159,7 @@ class TaskAllocationProblem:
         if cost2<0:
             logging.info(f"cost2<0: {cost2=}{A=}\n{n_il=}\n{n_il_format=}\n{S_A=}")
         
-        logging.info(f"{reward=}-{cost1=}-{cost2=}={profit=}")
+        # logging.info(f"{reward=}-{cost1=}-{cost2=}={profit=}")
         if int(reward) == 0:
             logging.info(f" int(reward) == 0 {S=}\n{A=}")
         return profit

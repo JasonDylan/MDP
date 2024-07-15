@@ -66,18 +66,22 @@ class SValue:
             self.init_s_value_t(t, S_agg)
         return 0
 
-    def update_total_rewards(self, total_reward):
-        for t in self.s_values:
-            for S_agg in self.s_values[t]:
-                if S_agg in self.s_values[t]:
-                    count = self.get_s_count(t, S_agg)
-                    old_value = self.get_total_reward(t, S_agg)
-                    weight = 1 / (count + 1)
-                    new_value = old_value + weight * (total_reward[t] - old_value)
-                    self.s_values[t][S_agg]["count"] = count + 1
-                    self.s_values[t][S_agg]["total_reward"] = new_value
-                else:
-                    self.init_s_value_t(t, S_agg)
+    def update_total_rewards(self, rewards):
+        """
+        更新状态S在时间步t之后的所有决策收益的总和
+        :param rewards: 总收益字典，键为时间步t，值为(聚合状态, 总收益)元组
+        """
+        for t in range(self.T):
+            if t in rewards:
+                S_agg, reward = rewards[t]
+                tuple_s_agg = self._convert_to_tuple(S_agg)
+                count = self.get_s_count(t, tuple_s_agg)
+                old_value = self.get_total_reward(t, tuple_s_agg)
+                weight = 1 / (count + 1)
+                new_value = old_value + weight * (reward - old_value)
+                self.s_values[t][tuple_s_agg]["count"] = count + 1
+                self.s_values[t][tuple_s_agg]["total_reward"] = new_value
+
 
     def get_s_values(self):
         return self.s_values
@@ -546,6 +550,8 @@ class TaskAllocationProblem:
                         )
 
             # 求解问题
+            
+            solver = pulp.PULP_CBC_CMD(msg=False)
             status = prob.solve()
             if status != pulp.LpStatusOptimal:
                 raise ValueError(
@@ -780,6 +786,7 @@ class TaskAllocationProblem:
         logging.info(f"{(T,self.Z_cluster_num)=} {len(self.task_arr)=}")
         for j in tqdm(range(J), desc=f"{Process_id=} {(T, self.Z_cluster_num)=} j/{J=}", position=Process_id):
             pr = T * [0]
+            agg_states = T * [None]  # 用于存储每个时间步的聚合状态
             for t in range(T):
                 if t == 0:
                     # 生成初始状态S
@@ -788,7 +795,7 @@ class TaskAllocationProblem:
                     S = S_next
                 # 聚合当前状态S，生成聚合状态S_agg
                 S_agg = self.func2(S,)
-                # logging.info(f"{j=} {t=} {S_agg=}")
+                agg_states[t] = S_agg  # 记录聚合状态
                 if j == 0:
                     # 对于第一轮迭代，将初始状态S_agg添加到s_value列表中
                     s_value.init_s_value_t(t, S_agg)
@@ -805,10 +812,9 @@ class TaskAllocationProblem:
                 pr[t] = self.Profit(S, A)
                 xi = self.task_arr[t]
                 S_next = self.state_trans(S, A, xi)
-            total_reward = [0] * T
-            for t in range(T - 1, -1, -1):
-                total_reward[t] = sum(pr[t:])
-            s_value.update_total_rewards(total_reward)
+            total_reward = [sum(pr[t:]) for t in range(T)]  # 计算每个时间步的总收益
+            rewards = {t: (agg_states[t], total_reward[t]) for t in range(T)}  # 生成奖励字典
+            s_value.update_total_rewards(rewards)  # 更新奖励值
             # logging.info(f"{s_value.s_values=}")
             len_state = len(s_value.s_values[0].keys())
             logging.info(f"-------{(T,self.Z_cluster_num)=} {j=} {t=} {len_state=} {total_reward=}------")
@@ -1094,7 +1100,9 @@ class TaskAllocationProblem:
                     prob += y[m, i, l] <= (L_server[m] >= l)
 
         # 求解问题
-        prob.solve()
+
+        solver = pulp.PULP_CBC_CMD(msg=0)
+        prob.solve(solver)
         obj = pulp.value(prob.objective)
 
         # 解析结果

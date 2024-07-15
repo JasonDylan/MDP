@@ -17,6 +17,8 @@ from my_wraps import timeit
 from task_alloacate_problem import SValue, TaskAllocationProblem
 
 # 装饰器用于计算函数调用时间
+# 禁用Pulp包的日志输出
+logging.getLogger("pulp").setLevel(logging.ERROR)
 
 def save_to_csv(result, T_values, Z_values, S_n, file_name="./data/results.csv"):
     """
@@ -92,6 +94,7 @@ class TaskRunner:
             result, T_values, Z_values, S_n, file_name="./data/benchmark_results.csv"
         )
         logging.info(f"----------------------finished benchmark---------------------")
+        return result
 
     def run(self, T, Z_cluster_num, J, S_n=5, solution_types=4, Process_id=0) -> SValue:
         # 初始化 result 四维矩阵
@@ -196,7 +199,7 @@ def process_task(args):
     T, Z_cluster_num, J, S_n, solution_types, Process_id = args
     logger = setup_logging(f"{__file__}", Process_id)
     task = TaskRunner()
-    result = task.run(
+    s_value, result = task.run(
         T=T, Z_cluster_num=Z_cluster_num, J=J, S_n=S_n, solution_types=solution_types,Process_id =Process_id
     )
     return result
@@ -250,7 +253,9 @@ def test():
     
 
 def main():
-    J = 10000
+    
+    logger = setup_logging(f"{__file__}", process_id=0)
+    J = 500
     S_n = 5
     solution_types = 4
     T_values = [7, 14, 21]
@@ -263,6 +268,12 @@ def main():
     ]
 
     try:
+        bench_mark_runner = TaskRunner()
+        logging.info("start benchmark!")
+        bench_mark_result = bench_mark_runner.run_benchmark()
+        logging.info("done benchmark!")
+
+        # Merge the results
         results = process_map(
             process_task, task_args, max_workers=10
         )  # 调整 max_workers 根据你的 CPU 核数
@@ -270,8 +281,13 @@ def main():
         for i, (T, Z_cluster_num, _, _, _, _) in enumerate(task_args):
             T_idx = T_values.index(T)
             Z_idx = Z_values.index(Z_cluster_num)
+            # Debug information
+            print(f"[DEBUG] results[{i}] shape: {results[i].shape}")
+            print(f"[DEBUG] result[:, :, T_idx, Z_idx] shape: {result[:, :, T_idx, Z_idx].shape}")
             result[:, :, T_idx, Z_idx] = results[i][:, :, 0, 0]
-
+        
+        result += bench_mark_result
+        
     finally:
         # 将结果保存到 CSV 文件
         save_to_csv(

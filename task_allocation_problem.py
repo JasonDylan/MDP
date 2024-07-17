@@ -1,4 +1,4 @@
-# %%
+# %% task_allocation_problem.py
 import logging
 from util.logging_config import setup_logging
 import csv
@@ -147,6 +147,8 @@ class TaskRunner:
                 json.dump(s_value.s_values, file, indent=4)
         return s_value, result
 
+        
+
     def init_a_problem(self, T=7, Z_cluster_num=3, J=10000):
         logging.info("problem init")
         I_citys = 26
@@ -164,6 +166,22 @@ class TaskRunner:
             [0 if i == j else random.randint(100, 500) for j in range(I_citys)]
             for i in range(I_citys)
         ]
+        # 创建城市名称列表
+        cities = [f'city {i+1}' for i in range(I_citys)]
+        levels = [f'level {l+1}' for l in range(L_levels)]
+        servers = [f'server {s+1}' for s in range(M_servers)]
+        servers_state = ['home', 'level', 'day off']
+        arriving_rate_df = pd.DataFrame(lambd, index=cities, columns=levels)
+        # 将矩阵转换为 DataFrame
+        travel_fee_df = pd.DataFrame(c1, index=cities, columns=cities)
+        # 输出 CSV 文件
+        travel_fee_path = f'init/travel_fee.csv'
+        travel_fee_df.to_csv(travel_fee_path)
+        
+        arriving_rate_path = f'init/arriving_rate.csv'
+        arriving_rate_df.to_csv(arriving_rate_path)
+        print(f"CSV 文件已生成：{travel_fee_path=}")
+        print(f"CSV 文件已生成：{arriving_rate_path=}")
         # 创建问题实例
         self.problem = TaskAllocationProblem(
             I_citys=I_citys,
@@ -255,7 +273,7 @@ def test():
 def main():
     
     logger = setup_logging(f"{__file__}", process_id=0)
-    J = 500
+    J = 10000
     S_n = 5
     solution_types = 4
     T_values = [7, 14, 21]

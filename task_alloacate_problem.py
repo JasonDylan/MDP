@@ -1,4 +1,4 @@
-# %%
+# %% task_alloacate_problem.py
 from tqdm import tqdm
 import logging
 import copy
@@ -199,13 +199,15 @@ class TaskAllocationProblem:
         return result
 
     def func2(self, S,):
+        # 计算有任务的服务器数量 barM
         barM = np.sum(
             [1 for m_server in range(self.M_servers) if S[1][m_server][1] != 0]
         )
+        # cluster 是使用 self.split_list 方法将城市列表分割成的若干个簇（clusters）
         cluster = self.split_list(self.I_citys, self.Z_cluster_num)
         num_cluster = np.ceil(self.I_citys / self.Z_cluster_num).astype(int)
         g = np.zeros(num_cluster)
-
+        # 计算每个簇的状态 g
         for z_cluster in range(num_cluster):
             e_z = np.sum(
                 [
@@ -217,10 +219,11 @@ class TaskAllocationProblem:
             if e_z == 0:
                 g[z_cluster] = 0
             elif e_z <= barM / num_cluster:
+                # 簇中的服务器数量小于等于平均服务器数量
                 g[z_cluster] = 1
             else:
                 g[z_cluster] = 2
-
+        # 获取第一个服务器的工作日 w
         w = S[1][0][1]
 
         N = np.zeros((num_cluster, self.L_levels))
@@ -834,7 +837,7 @@ class TaskAllocationProblem:
         self.init_S_J = [self.func1() for j in range(J)]
         # logging.info(f"init {self.init_S_J[:5]}")
         for i in range(min(5, J)):
-            self.save_to_one_csv(self.init_S_J[i], csv_path=f"init/init_state_{i}_{T}_{J}.csv")
+            self.save_to_one_csv(self.init_S_J[i], csv_path=f"init/init_state_{i}.csv")
 
     def calc_total_reward_for_init_S_by_rnd(self, init_S, T=7):
         """

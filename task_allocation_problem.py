@@ -221,53 +221,6 @@ def process_task(args):
         T=T, Z_cluster_num=Z_cluster_num, J=J, S_n=S_n, solution_types=solution_types,Process_id =Process_id
     )
     return result
-
-def test():
-    J = 5
-    S_n = 5
-    solution_types = 4
-    T_values = [7, 14, 21]
-    Z_values = [3, 5, 9]
-    result = np.zeros((S_n, solution_types, len(T_values), len(Z_values)))
-
-    task_args = [
-        (T, Z_cluster_num, J, S_n, solution_types, Process_id+1) 
-        for Process_id, (T, Z_cluster_num) in enumerate((T, Z) for T in T_values for Z in Z_values)
-    ]
-    from numpy import array
-    
-    task = TaskRunner()
-    task.init_a_problem(T=7, Z_cluster_num=3, J=5)
-    S1 = (array([[0, 3, 0, 0, 1],
-       [0, 0, 2, 0, 0],
-       [0, 1, 0, 0, 0],
-       [0, 0, 0, 1, 0],
-       [1, 0, 0, 0, 3],
-       [0, 0, 0, 0, 0],
-       [0, 1, 0, 0, 1],
-       [0, 2, 0, 2, 0],
-       [0, 0, 0, 0, 1],
-       [0, 0, 0, 1, 1],
-       [0, 0, 3, 0, 0],
-       [0, 0, 0, 0, 0],
-       [0, 0, 2, 0, 0],
-       [1, 0, 1, 0, 1],
-       [0, 0, 0, 0, 1],
-       [0, 0, 0, 0, 0],
-       [0, 0, 2, 0, 1],
-       [1, 2, 0, 0, 0],
-       [0, 1, 1, 0, 0],
-       [0, 1, 0, 0, 0],
-       [1, 0, 0, 0, 0],
-       [0, 0, 1, 0, 0],
-       [0, 0, 2, 2, 1],
-       [1, 1, 1, 0, 0],
-       [1, 0, 0, 0, 0],
-       [0, 1, 1, 0, 0]]), [(9, 5), (6, 2), (15, 3), (15, 1), (19, 0), (16, 3), (0, 1), (11, 5), (4, 4), (22, 2), (8, 0), (18, 2), (19, 2), (23, 5), (23, 0), (10, 3), (7, 0), (5, 3), (2, 3), (24, 5), (24, 2), (17, 4), (17, 5), (21, 1), (15, 2), (8, 4), (0, 3), (0, 3), (20, 5), (23, 3), (16, 2), (15, 0), (18, 3), (22, 5), (13, 5), (5, 5), (12, 5), (21, 2), (1, 2), (0, 4)])
-    S_agg = task.problem.func2(S1)
-    # print(f"final {S_agg=}")
-    print("(T, Z_cluster_num, J, S_n, solution_types,Process_id)", task_args[0])
-    process_task(task_args[0])
     
 
 def main():

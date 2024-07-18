@@ -85,6 +85,19 @@ class SValue:
 
     def get_s_values(self):
         return self.s_values
+    
+    
+def save_clusters_to_csv(clusters, filename):
+    # Save the clusters to a CSV file
+    with open(filename, 'w', newline='') as csvfile:
+        csv_writer = csv.writer(csvfile)
+        
+        # Write header
+        csv_writer.writerow(['Cluster', 'Cities'])
+
+        # Write clusters
+        for cluster_idx, cluster in enumerate(clusters):
+            csv_writer.writerow([f'Cluster {cluster_idx + 1}', ', '.join(map(str, cluster))])
 
 
 class TaskAllocationProblem:

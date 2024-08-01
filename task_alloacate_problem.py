@@ -213,7 +213,7 @@ class TaskAllocationProblem:
         )
         # cluster 是使用 self.split_list 方法将城市列表分割成的若干个簇（clusters）
         cluster = self.split_list(self.I_citys, self.Z_cluster_num)
-        num_cluster = self.Z_cluster_num 
+        num_cluster = self.Z_cluster_num
         g = np.zeros(num_cluster)
         # 计算每个簇的状态 g
         for z_cluster in range(num_cluster):

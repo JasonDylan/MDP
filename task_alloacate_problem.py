@@ -86,7 +86,7 @@ class SValue:
     def get_s_values(self):
         return self.s_values
     
-    
+
 def save_clusters_to_csv(clusters, filename):
     # Save the clusters to a CSV file
     with open(filename, 'w', newline='') as csvfile:
@@ -198,27 +198,22 @@ class TaskAllocationProblem:
     def split_array_given_array(self, arr_city_idx, Z_cluster_num) -> list:
 
         result = []
-        quotient = len(arr_city_idx) // Z_cluster_num
+        quotient = len(arr_city_idx) // Z_cluster_num + 1
         remainder = len(arr_city_idx) % Z_cluster_num
 
-        for i in range(quotient):
-            sub_array = arr_city_idx[i * Z_cluster_num : (i + 1) * Z_cluster_num]
+        for i in range(Z_cluster_num):
+            sub_array = arr_city_idx[i * quotient : (i + 1) * quotient]
             result.append(sub_array)
-
-        if remainder > 0:
-            sub_array = arr_city_idx[-remainder:]
-            result.append(sub_array)
-
         return result
 
-    def func2(self, S,):
+    def func2(self, S, ):
         # 计算有任务的服务器数量 barM
         barM = np.sum(
             [1 for m_server in range(self.M_servers) if S[1][m_server][1] != 0]
         )
         # cluster 是使用 self.split_list 方法将城市列表分割成的若干个簇（clusters）
         cluster = self.split_list(self.I_citys, self.Z_cluster_num)
-        num_cluster = np.ceil(self.I_citys / self.Z_cluster_num).astype(int)
+        num_cluster = self.Z_cluster_num 
         g = np.zeros(num_cluster)
         # 计算每个簇的状态 g
         for z_cluster in range(num_cluster):

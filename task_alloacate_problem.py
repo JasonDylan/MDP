@@ -82,22 +82,23 @@ class SValue:
                 self.s_values[t][tuple_s_agg]["count"] = count + 1
                 self.s_values[t][tuple_s_agg]["total_reward"] = new_value
 
-
     def get_s_values(self):
         return self.s_values
-    
+
 
 def save_clusters_to_csv(clusters, filename):
     # Save the clusters to a CSV file
-    with open(filename, 'w', newline='') as csvfile:
+    with open(filename, "w", newline="") as csvfile:
         csv_writer = csv.writer(csvfile)
-        
+
         # Write header
-        csv_writer.writerow(['Cluster', 'Cities'])
+        csv_writer.writerow(["Cluster", "Cities"])
 
         # Write clusters
         for cluster_idx, cluster in enumerate(clusters):
-            csv_writer.writerow([f'Cluster {cluster_idx + 1}', ', '.join(map(str, cluster))])
+            csv_writer.writerow(
+                [f"Cluster {cluster_idx + 1}", ", ".join(map(str, cluster))]
+            )
 
 
 class TaskAllocationProblem:
@@ -133,10 +134,8 @@ class TaskAllocationProblem:
         self.c2 = c2
         self.Z_cluster_num = Z_cluster_num
 
-    
-        
     def func1(self):
-        
+
         n_il = np.zeros((self.I_citys, self.L_levels), dtype=int)
         for i_city in range(self.I_citys):
             for l_level in range(self.L_levels):
@@ -206,7 +205,10 @@ class TaskAllocationProblem:
             result.append(sub_array)
         return result
 
-    def func2(self, S, ):
+    def func2(
+        self,
+        S,
+    ):
         # 计算有任务的服务器数量 barM
         barM = np.sum(
             [1 for m_server in range(self.M_servers) if S[1][m_server][1] != 0]
@@ -304,7 +306,6 @@ class TaskAllocationProblem:
         ser_info_next = list(zip(ser_info_1, ser_info_2))
         S_next = (n_next, ser_info_next)
 
-
         prob += (
             pulp.lpSum(
                 self.r1[l] * y[m, i, l] - self.c1[servers_info[m][0]][i] * y[m, i, l]
@@ -369,7 +370,9 @@ class TaskAllocationProblem:
                 try:
                     prob += y[m, self.H_home_of_server[m], 0] == 1
                 except Exception as ex:
-                    logging.info(f"{ex=} {m=} {self.H_home_of_server=} {self.L_server=} {S=}")
+                    logging.info(
+                        f"{ex=} {m=} {self.H_home_of_server=} {self.L_server=} {S=}"
+                    )
                     raise ex
             elif wm > 0:
 
@@ -561,7 +564,7 @@ class TaskAllocationProblem:
                         )
 
             # 求解问题
-            
+
             solver = pulp.PULP_CBC_CMD(msg=False)
             status = prob.solve()
             if status != pulp.LpStatusOptimal:
@@ -736,7 +739,9 @@ class TaskAllocationProblem:
                     # 使用上一轮的状态作为当前状态S
                     S = S_next
                 # 聚合当前状态S，生成聚合状态S_agg
-                S_agg = self.func2(S,)
+                S_agg = self.func2(
+                    S,
+                )
                 if j == 0:
                     # 对于第一轮迭代，将初始状态S_agg添加到s_value列表中
                     s_value.append([t, 1, S_agg, 0])
@@ -795,7 +800,11 @@ class TaskAllocationProblem:
         T = T
         s_value = SValue(T)
         logging.info(f"{(T,self.Z_cluster_num)=} {len(self.task_arr)=}")
-        for j in tqdm(range(J), desc=f"{Process_id=} {(T, self.Z_cluster_num)=} j/{J=}", position=Process_id):
+        for j in tqdm(
+            range(J),
+            desc=f"{Process_id=} {(T, self.Z_cluster_num)=} j/{J=}",
+            position=Process_id,
+        ):
             pr = T * [0]
             agg_states = T * [None]  # 用于存储每个时间步的聚合状态
             for t in range(T):
@@ -805,7 +814,9 @@ class TaskAllocationProblem:
                 else:
                     S = S_next
                 # 聚合当前状态S，生成聚合状态S_agg
-                S_agg = self.func2(S,)
+                S_agg = self.func2(
+                    S,
+                )
                 agg_states[t] = S_agg  # 记录聚合状态
                 if j == 0:
                     # 对于第一轮迭代，将初始状态S_agg添加到s_value列表中
@@ -824,13 +835,19 @@ class TaskAllocationProblem:
                 xi = self.task_arr[t]
                 S_next = self.state_trans(S, A, xi)
             total_reward = [sum(pr[t:]) for t in range(T)]  # 计算每个时间步的总收益
-            rewards = {t: (agg_states[t], total_reward[t]) for t in range(T)}  # 生成奖励字典
+            rewards = {
+                t: (agg_states[t], total_reward[t]) for t in range(T)
+            }  # 生成奖励字典
             s_value.update_total_rewards(rewards)  # 更新奖励值
             # logging.info(f"{s_value.s_values=}")
             len_state = len(s_value.s_values[0].keys())
-            logging.info(f"-------{(T,self.Z_cluster_num)=} {j=} {t=} {len_state=} {total_reward=}------")
-            if j!= len_state-1:
-                logging.info(f"!!!!!!!{(T,self.Z_cluster_num)=} {j=} {t=} {len_state=} !!!!!!! ")
+            logging.info(
+                f"-------{(T,self.Z_cluster_num)=} {j=} {t=} {len_state=} {total_reward=}------"
+            )
+            if j != len_state - 1:
+                logging.info(
+                    f"!!!!!!!{(T,self.Z_cluster_num)=} {j=} {t=} {len_state=} !!!!!!! "
+                )
 
         return s_value
 
@@ -873,7 +890,7 @@ class TaskAllocationProblem:
             R_t = self.Profit(S=S_current, A=Y_allocation)
             total_reward += R_t
             pr[t] = R_t
-            
+
             # 获取当前时间步的任务到达量
             xi = task_arr[t]
             S_next = self.state_trans(S=S_current, act=Y_allocation, xi=xi)
@@ -941,7 +958,7 @@ class TaskAllocationProblem:
             (m, i, l): self.c1[servers_info[m][0]][i]
             for m in range(M_servers)
             for i in range(I_citys)
-            for l in range(1, 1+L_levels)
+            for l in range(1, 1 + L_levels)
         }
         for m in range(M_servers):
             im, wm = servers_info[m]
@@ -951,10 +968,10 @@ class TaskAllocationProblem:
             else:
                 # todo 这里其实也是随机，因为业务员时按顺序分配最近的，而不是全局最近的，如果要真的求最近的还是得用pulp改
                 available_tasks = [
-                    (i, l+1)
+                    (i, l + 1)
                     for i in range(I_citys)
                     for l in range(L_levels)
-                    if n_il[i][l] > 0 and l+1 >= L_server[m]
+                    if n_il[i][l] > 0 and l + 1 >= L_server[m]
                 ]
                 # logging.info(f"{available_tasks=}")
                 if available_tasks:
@@ -963,16 +980,16 @@ class TaskAllocationProblem:
                         available_tasks,
                         key=lambda task: distances[(m, task[0], task[1])],
                     )
-                    
+
                     i_nearest, l_nearest = nearest_task
                     allocation[m] = (m, i_nearest, l_nearest)
-                    # logging.info(f"{m=} {nearest_task=}")    
+                    # logging.info(f"{m=} {nearest_task=}")
                     # logging.info(f"{allocation[m]=} {n_il[i_nearest]=} {servers_info[m]=}")
-                
-                    n_il[i_nearest][l_nearest-1] -= 1
+
+                    n_il[i_nearest][l_nearest - 1] -= 1
                 else:
                     allocation[m] = (m, self.H_home_of_server[m], 0)
-           
+
         return allocation
 
     def nearest_distance(self, init_S, T=7):
@@ -1087,7 +1104,9 @@ class TaskAllocationProblem:
                 try:
                     prob += y[m, self.H_home_of_server[m], 0] == 1
                 except Exception as ex:
-                    logging.info(f"{ex=} {m=} {self.H_home_of_server=} {self.L_server=} {S=}")
+                    logging.info(
+                        f"{ex=} {m=} {self.H_home_of_server=} {self.L_server=} {S=}"
+                    )
                     raise ex
             elif wm > 0:
 
@@ -1162,22 +1181,23 @@ class TaskAllocationProblem:
 
         for m in range(M_servers):
             # logging.info(f"{servers_info[m][0]=} {A[m][1]=}")
-            cost1 += self.c1[servers_info[m][0]][A[m][1]] # c1 是服务器在不同任务和等级上的成本矩阵
+            cost1 += self.c1[servers_info[m][0]][
+                A[m][1]
+            ]  # c1 是服务器在不同任务和等级上的成本矩阵
         # 计算第二个成本
         cost2 = 0
-        n_il_format = np.array([[0] * self.L_levels 
-                                for _ in range(self.I_citys)])
-        
+        n_il_format = np.array([[0] * self.L_levels for _ in range(self.I_citys)])
+
         for item in A:
-            m, i, l =  item
-            if l > 0 :
-                n_il_format[i][l-1] += 1
-        S_A = n_il-n_il_format
+            m, i, l = item
+            if l > 0:
+                n_il_format[i][l - 1] += 1
+        S_A = n_il - n_il_format
         cost2 = self.c2 * np.sum(S_A)
         profit = reward - cost1 - cost2
-        if cost2<0:
+        if cost2 < 0:
             logging.info(f"cost2<0: {cost2=}{A=}\n{n_il=}\n{n_il_format=}\n{S_A=}")
-        
+
         # logging.info(f"{reward=}-{cost1=}-{cost2=}={profit=}")
         if int(reward) == 0:
             logging.info(f" int(reward) == 0 {S=}\n{A=}")

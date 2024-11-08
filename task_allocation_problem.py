@@ -358,7 +358,7 @@ def process_task(args):
 def main():
 
     logger = setup_logging(f"{__file__}", process_id=0)
-    J = 1000000
+    J = 10000
     S_n = 5
     solution_types = 4
     T_values = [7, 14, 21]
@@ -374,9 +374,9 @@ def main():
     bench_mark_runner = None
     try:
         bench_mark_runner = TaskRunner()
-        logging.info("start benchmark!")
+        print("start benchmark!")
         bench_mark_result = bench_mark_runner.run_benchmark()
-        logging.info("done benchmark!")
+        print("done benchmark!")
 
         # Merge the results
         results = process_map(

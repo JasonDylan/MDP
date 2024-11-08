@@ -40,8 +40,8 @@ def setup_logging(caller_dir_name=None, process_id = 0):
     file_handler = logging.handlers.TimedRotatingFileHandler(
         log_file_path,
         when="H",
-        interval=1,
-        backupCount=168,  # 24 hours * 7 days = 168 hours
+        interval=6,
+        backupCount=20,  # 24 hours * 7 days = 168 hours
     )
     file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(formatter)

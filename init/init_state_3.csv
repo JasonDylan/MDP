@@ -1,0 +1,41 @@
+city_id,Level_0,Level_1,Level_2,Level_3,Level_4,,server_id,City,Workday_left
+city 1,1,1,0,1,0,,server 1,2,1
+city 2,0,0,0,1,0,,server 2,19,3
+city 3,0,0,0,0,1,,server 3,4,4
+city 4,1,1,0,0,0,,server 4,8,5
+city 5,1,1,0,1,0,,server 5,20,1
+city 6,0,1,1,1,1,,server 6,2,3
+city 7,1,1,1,1,1,,server 7,21,3
+city 8,0,0,0,1,0,,server 8,23,3
+city 9,0,1,0,0,1,,server 9,9,0
+city 10,0,1,0,0,0,,server 10,23,5
+city 11,0,1,0,0,1,,server 11,13,2
+city 12,1,0,0,0,0,,server 12,17,0
+city 13,1,1,0,0,0,,server 13,16,2
+city 14,1,0,1,0,0,,server 14,8,5
+city 15,0,1,0,1,1,,server 15,12,1
+city 16,1,0,0,1,1,,server 16,6,0
+city 17,0,1,0,1,1,,server 17,21,0
+city 18,1,1,1,1,1,,server 18,10,5
+city 19,1,1,0,1,0,,server 19,3,5
+city 20,1,1,1,1,1,,server 20,12,1
+city 21,0,1,1,1,0,,server 21,22,1
+city 22,0,1,1,1,1,,server 22,10,4
+city 23,1,1,0,0,0,,server 23,17,5
+city 24,0,1,1,0,1,,server 24,9,4
+city 25,1,0,0,1,0,,server 25,8,3
+city 26,1,1,0,0,1,,server 26,1,5
+,,,,,,,server 27,4,0
+,,,,,,,server 28,5,0
+,,,,,,,server 29,11,1
+,,,,,,,server 30,9,4
+,,,,,,,server 31,20,5
+,,,,,,,server 32,24,2
+,,,,,,,server 33,7,5
+,,,,,,,server 34,11,1
+,,,,,,,server 35,24,4
+,,,,,,,server 36,6,4
+,,,,,,,server 37,12,1
+,,,,,,,server 38,20,0
+,,,,,,,server 39,13,3
+,,,,,,,server 40,21,1

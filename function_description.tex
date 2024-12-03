@@ -1,0 +1,366 @@
+\documentclass[a4paper,11pt]
+{elsarticle}%EJOR要求The article should be A4 or letter size, in single column pages, with 11pt font.
+
+ \usepackage{ctex}
+%\usepackage{apalike}%加载APA样式包
+\usepackage{hyperref}%超链接
+\usepackage{multirow}%表格跨行
+\usepackage{amsthm, amsmath}%数学公式
+\usepackage{color}%颜色包
+\usepackage{setspace}%间距宏包
+%\usepackage{natbib}
+\usepackage{mathrsfs}
+
+\usepackage{cleveref}
+
+
+%\usepackage{natbib}
+\usepackage[backend=biber, style=apa]{biblatex}
+
+%\bibliography{mybib.bib}
+%\bibliographystyle{apalike}%使用APA样式
+%\biboptions{authoryear}%这是在正文中的引用方式，使用作者名称及年份
+
+
+
+%\usepackage{apacite}
+
+%\newcommand*{\fullref}[1]{\namecref{#1} \nameref*{#1}}
+
+
+\usepackage{amssymb,amsthm}
+\usepackage{rotate,graphicx,epsfig}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{caption}
+\usepackage{multicol}
+\usepackage{multirow}
+\usepackage{arydshln}
+\usepackage{longtable}
+\def\bx{\expandafter\BX\expandafter{\ifnum0=`}\fi}
+\newcommand{\nb}{\nonumber}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}{Lemma}[section]
+\newtheorem{corollary}{Corollary}[section]
+\newtheorem{remark}{Remark}[section]
+\newtheorem{definition}{Definition}[section]
+\newtheorem{proposition}{Proposition}[section]
+\newtheorem{example}{Example}[section]
+\newtheorem{theo}{Theorem}[section]
+\newtheorem{pr}{Proposition}[section]
+\newtheorem{lem}{Lemma}[section]
+\newtheorem{co}{Corollary}[section]
+\newtheorem{re}{Remark}[section]
+\newtheorem{de}{Definition}[section]
+\newtheorem{exa}{Example}[section]
+\newtheorem{mypro}{Proposition}
+\newtheorem{mypre}{Theorem}
+%\DeclareUnicodeCharacter{0301}{\'{e}}
+
+%\biboptions{authoryear}
+ 
+\onehalfspacing%EJOR要求 1.5 line spacing
+ 
+%\journal{EJOR}
+
+\bibliography{mybib.bib}
+%\bibliographystyle{apalike}%使用APA样式
+
+ 
+\begin{document}%文件开头
+\section{代码对应函数}
+
+
+\textbf{函数1}随机生成状态$S$。函数$S=f_1(I,L,W,M,x,\mathscr{H},\lambda)$。
+
+参数$I$，$L$，$W$，$M$，$x$都是常数；向量$\mathscr{H}=(h_1,h_2,\ldots,h_M)$，其中$h_m\in\{1,\ldots,I\}$；矩阵$\lambda=(\lambda_{il})$是$I\times L$维矩阵。
+
+函数用于随机生成状态$S$，$S=((n_{il}),(i_1,w_1),\ldots,(i_M,w_M))$，其中$(n_{il})$是$I\times L$维矩阵，且矩阵中的任意元素取值为$0,1,\ldots,x$，服从Possion分布，即对于$(n_{il})$中的第$i$行第$l$列的元素
+$n_{il}$取值为$j=0,\ldots,x$的概率为
+$$
+P_j=\frac{\lambda_{il}^j}{j!}\cdot e^{-\lambda}
+$$
+这样便生成了$(n_{il})$。
+
+对于$m=1,\cdots,M$，
+$(i_m,w_m)$中$i_m\in\{1,2,\ldots,I\}$，均匀分布，即取到任何一个值的概率为$1/I$；$w_m\in\{0,1,2,\ldots,W\}$，取值也是均匀分布，$1/(W+1)$。特别注意：当$w_m=W$，则$i_m=h_m$是固定的。
+
+
+这样给定各参数，就可以随机生成一个状态$S$。
+
+
+~
+
+~
+
+\textbf{函数2}生成$S$到$\bar{S}$的函数。函数$\bar{S}=f_2(Z,S,X)$
+
+参数：给定状态$S=((n_{il}),(i_1,w_1),\ldots,(i_M,w_M))$，和常数$Z$和$X$。
+
+函数用于生成压缩后的状态$\bar{S}=((N)_{zl},(g_1,\ldots,g_Z),w)$，其中
+$Z$将$L$切分为$Z$份，每一份有$L/Z$元素，如$L=15$，$Z=4$，则$\mathscr{Z}_1=\{1,2,3,4\}$，$\mathscr{Z}_2=\{5,6,7,8\}$，$\mathscr{Z}_3=\{9,10,11,12\}$，$\mathscr{Z}_4=\{13,14,15\}$四份，尽量平均分配，有余数则余数作为一类。
+
+$(N_{zl})$是$Z\times L$维的矩阵，如$z=1$中第$l$列的元素为$N_{1l}=\max\{X,n_{1l}+n_{2l}+\ldots+n_{L/Z,l}\}$，表示在$\mathscr{Z}_1$这一份中的元素之和，以此类推。
+
+令$e_z=\sum_{m=1}^M \mathbb{I}(i_m\in\mathscr{Z}_z)$ 是在聚类 $z$中的数量。 并且令 $\bar{M}=\sum_{m=1}^M \mathbb{I}(w_m\not=0)$ ，这里$\mathbb{I}(\cdot)$是指示函数，等于括号中的就为1，否则为0。
+
+令 $g_z$ 满足：
+\begin{align}\label{eq-g}
+g_z=\left\{
+\begin{array}{ll}
+0,~~~&e_z=0;      \\1,~~~&e_z<\frac{\bar{M}}{Z};
+\\
+2,~~~&e_z\geq\frac{\bar{M}}{Z}.
+\end{array}\right.
+\end{align} 
+
+最后，令$W\gets w_1$。
+
+~
+
+~
+
+
+\textbf{函数3}生成$S$到$A$的函数: $A=f_3(S,\mathscr{L},\mathscr{H},r_1,(c_1(ij)),c_2)$
+
+参数为$S=((n_{il}),(i_1,w_1),\ldots,(i_M,w_M))$和$\mathscr{L}=(l_1,\ldots,l_M)$，其中$l_m\in\{1,\ldots,L\}$；$\mathscr{H}=(h_1,h_2,\ldots,h_M)$；$r_1=(r_1(0),r_1(1),\ldots,r_1(L))$；$(c_1(i,j))$是$I\times I$的矩阵，$c_2$是常数。
+
+状态生成决策$A=[(i^1,l^1),\ldots,(i^M,l^M)]$。其中$i^m\in\{1,2,\ldots,I\}$，$l^m\in\{1,2,\ldots,L\}$。
+
+$A$中$(i^m,l^m)$需要满足如下约束条件：
+\begin{alignat}{2}
+&(i^m,l^m)=(h_m,0),~~~~~~ &if~ w_m=0, \label{s0-1}
+\\
+&(i^m,l^m)\in\{(i,l)|n_{il}>0,l\geq l_m\}\cup\{(h_m,0)\},~~~~~~~~&if~ w_m>0,   \label{s0-2}\\
+&\phi_A(i,l):=\sum_{m}\mathbb{I}(i^m=i,l^m=l)\leq n_{il},~~~&\forall i,l.   \label{s0-3}
+\end{alignat}
+
+目标函数是：
+\begin{align}\label{revenue}
+R(S,A)=\max\sum\limits_{m}(r(l^m)-c_1(i_m,i^m))-c_2\sum\limits_{i,l}[n_{il}-\phi_A(i,l)],
+\end{align}
+
+这是一个线性规划问题，需要找到最优的决策$A$。
+
+
+~
+
+
+~
+
+\textbf{函数4}生成$S$到$\mathcal{L}$的函数: $\mathcal{L}=f_4(S,\mathscr{L})$
+
+参数$S,\mathscr{L}$以上都有介绍。
+
+输出分类之后的$l$，如$\mathcal{L}=[(l(1),\ldots,l(k_1)),(l(k_1+1),\ldots,l(k_2)),\ldots,(k_n,\ldots,L)]$的形式类似，其中$k_1,\ldots,k_n$是根据$S$的变化而变化的，具体对应如下：
+
+令$N_1(l=j)=\sum\limits_{m=1}^M\mathbb{I}(l_m=j,w_m\ne 0)$，其中$j=1,\ldots,L$，这里$N(l=j)$表示$l=j$的$m$的数量。
+令$N_2(l=j)=\sum\limits_{k=1}^I(n_{il})_{kj}$，表示矩阵中第$j$列的加和，表示$l=j$的$n$的数量。
+
+这样，我们假设$L=7$，则能够列出$N_1(l=1),\ldots,N_1(l=7)$和$N_2(l=1),\ldots,N_2(l=7)$如下表，tag用于比较每一行的大小，则有$6>5$，$6+2>2+1$，$6+2+3\leq 5+1+6$；遇到小于等于号则终止，将$l=1,2,3$归为一类；接着，$2>1$，$2+4\leq 1+17$，所以$l=4,5$归为一类；最后一类不论最后一个tag是$>$或$\leq$，都归为一类。所以在这个例子中的输出结果为$\mathcal{L}=[(1,2,3),(4,5),(6,7)]$。注意，若tag全为$>$，则只有一类$[(1,\ldots,L)]$。
+
+\begin{table}[H]
+  \centering
+  \caption{example}\label{tab-exa}
+  \begin{tabular}{c@{\hspace{1.2cm}}ccc}
+\hline 
+\text{$l$}  & 
+\text{$N_1$} &  \text{tag}  &   \text{$N_2$} \\ \hline
+1   &6 & $>$ & 5  \\
+2 &2 & $>$ & 1 \\
+3 &3 & $\leq$ & 6 \\
+    \hdashline 4 &2 & $>$ & 1\\
+5 &4 & $\leq$ & 17\\
+   \hdashline 
+6 &5 & $>$ & 4\\
+7 &7 & $>$ & 3 
+\\
+\hline
+\end{tabular}
+\end{table}
+
+
+\textbf{函数5} 生成$S$到$A=[A^1,\ldots,A^n]$的函数（这里的$A$和函数3中的$A$不一样）：$A=f_5(S,\mathcal{L},N_1,N_2)$.
+
+参数：这里利用了函数4得到的结果$N_1$和$N_2$，以及$\mathcal{L}$。
+
+函数3是对所有的$m$做分配，而这里函数5是对在一个$\mathcal{L}$中的每个元组（类）做分配，例如在表1中的$l=1,2,3$，$l=2,4$以及$l=6,7$独立进行分配，分配的方式和函数3一致。
+
+每个类的目标函数为：
+\begin{align}
+\label{R}
+R^k(S,A^k)=&\max\sum\limits_{m\in\mathcal{M}^k(S)}\big[r(l^m)-c_1(i_m,i^m)\big]\nb\\
+&-c_2\sum\limits_{i\in\mathcal{I},l\in\mathcal{L}^k}\big[n_{il}-\sum_{m\in\mathcal{M}^k(S)}\mathbb{I}(i^m=i,l^m=l)\big].
+\end{align}
+
+
+当每个类中的最后一个tag是$\leq$时，则有数学规划满足：
+\begin{alignat}{2}
+&(i^m,l^m)=(h_m,0),~~~~~~ &if~ w_m=0, \label{s1-1}
+\\
+%\label{s1-2}
+&(i^m,l^m)\in\{(i,l)|n_{il}>0,l\geq l_m\},~~~~~~~~&if~ w_m>0,   \label{s1-2}\\
+%\label{s0-3}
+&\sum_{m\in\mathcal {M}^k(S)}\mathbb{I}(i^m=i,l^m=l)\leq n_{il},~~~~~~&\forall i\in\mathcal{I},l\in\mathcal{L}^k,   \label{s1-3}
+\end{alignat}
+
+当最后一个tag是$>$时，则有数学归纳满足：
+\begin{alignat}{2}
+%
+&(i^m,l^m)=(h_m,0),~~~~~~ &if~ w_m=0, \label{s2-1}
+\\
+%\label{s1-2}
+&(i^m,l^m)\in\{(i,l)|n_{il}>0,l\geq l_m\}\cup \{(h_m,0)\},~~~~~~~~&if~ w_m>0,   \label{s2-2}\\
+%\label{s0-3}
+&\sum_{m\in\mathcal {M}^k}\mathbb{I}(i^m=i,l^m=l)= n_{il},~~~&\forall i\in\mathcal{I},l\in\mathcal{L}^K.   \label{s2-3}
+\end{alignat}
+以上有三个变量需要解释：$A^k$，
+$\mathcal{L}^K$和$\mathcal{M}^k(S)$。
+其中$A^k=(i^m,l^m)_{m\in\mathcal{M}^k(S)}$，$\mathcal{M}^k(S)=\{m=1,
+\ldots,M ~
+|~ l_m
+\in\mathcal{L}^k,w_m\ne 0\}$是在$
+\mathcal{L}$中类$k$对应的$m$。
+$
+\mathcal{L}^k$是类$k$对应的$l$，如表1中$\mathcal{L}^1=(1,2,3)$；$\mathcal{L}^2=(4,5)$，$\mathcal{L}^3=(6,7)$。
+
+最终对于任意的类$k$，得到$A^k=(i^m,l^m)_{m\in\mathcal{M}^k(S)}$。$A=[A^1,\ldots,A^n]$，实际上，这个也可以写成和函数3的输出一样的形式：$A=[(i^1,l^1),\ldots,(i^M,l^M)]$。
+
+~
+
+\textbf{函数6} 
+函数5是输出最优决策，而另一个输出是决策空间$\mathcal{A}$。记为$\mathcal{A}=f_6(S,\mathcal{L},N_1,N_2)$。
+
+$\mathcal{A}=[\mathcal{A}^1,\ldots,\mathcal{A}^L]$，其中
+$\mathcal{A}^m=[(i_1^m,l_1^m),\ldots,(i_n^m,l_n^m)]$，表示所有$m=1$可能的决策，这个决策满足约束条件\eqref{s1-1}-\eqref{s2-3}。
+
+换句话说函数$f_5$就是在$f_6$的基础上确定了最优的决策。
+
+~
+
+\textbf{函数7}
+生成$\Xi=f_7(T,x)$
+
+$T$和$x$是常数，$\Xi=((\xi_{il})_1,\ldots,(\xi_{il})_T)$。任意的$(\xi_{il})_t$是一个$I\times L$的矩阵，矩阵中的任意元素取值为$0,1,\ldots,x$，服从Possion分布，即对于$(\xi_{il})_t$中的第$i$行第$l$列的元素
+$\xi_{il}$取值为$j=0,\ldots,x$的概率为
+$$
+P_j=\frac{\lambda_{il}^j}{j!}\cdot e^{-\lambda}
+$$
+这样便生成了$(n_{il})$。
+
+~
+
+\textbf{函数8（带起始探索的强化学习算法）}
+
+生成最优值函数和最优策略：$[S_1,V^1,\pi^1]=f_8(f_1,V^0,\Xi,\pi^0)$。
+
+参数介绍：$S_1$是由函数$f_1$随机生成的；$V^0=[V_1^0(S_1),V_2^0
+,\ldots,V_T^0]$，除了$V_1^0(S_1)$是一个常数值，其他的均为向量：$V_t^0=(V_t^0(\bar{S}))_{\bar{S}\in\bar{\mathcal{S}}}$，其中，$\bar{\mathcal{S}}$是函数2中$\bar{S}$的状态空间，即$\bar{S}$所有可能的情况，这里设$V^0$中所有的元素都为0。令第0次迭代的策略
+$\pi^0=[A^0_1,\ldots,A^0_T]$，
+对于$t=1,2,\ldots,T$，满足
+\begin{align}\label{A}
+A_t^0=\operatorname*{arg\,max}\limits_{A_t\in f_6(S_t)}[{R}({S}_t,{A}_t)]
+\end{align}
+这里的$R(S_t,A_t)$是\eqref{revenue}中max内的部分（简化记为$R_t$）。
+而在$t+1$阶段，
+$S_{t+1}=S_t+(\xi_{il})_t$指的是$S_t$中的$(n_{il})$加上由函数7产生的$(\xi_{il})_t$部分。
+
+步骤一：通过$f_1$随机生成一个初始状态$S_1$。
+
+步骤二：计算在此状态下的最优决策：
+$$
+A_1=\arg\max\limits_{Y_1\in f_6}R(S_1,Y_1)+V^0_1(T(S_1,Y_1))
+$$
+这里，$R(S_1,Y_1)=R_1+R_2+\ldots-C_h$是在函数5中的每个等级类的目标函数相加，$f_6$是每个等级类中服务员的决策空间；初始令所有的$V^0=0$；$T(S_1,Y_1)=S_2$是转移状态，即$T(S_1,Y_1)=(S_1[0]+f_7-Y_1, i^1,w-1)$，城市中的任务有新到达的$f_7$，但是减掉已经完成的$Y_1$，员工的位置变为$i^1$，距离放假日减少1，但是如果$w=0$，则变成$w=W$。
+
+步骤三：$S_2=T(S_1,Y_1)$应该通过$f_2$压缩，然后放入$V_1^0(f_2(T(S_1,Y_1)))$中，所以上式应该重新写为
+$$
+A_1=\arg\max\limits_{Y_1\in f_6}R(S_1,Y_1)+V_1^0(f_2(T(S_1,Y_1)))
+$$
+
+步骤四：计算这一步的收益$R_1(S_1,A_1)$，然后令$S_1\gets S_2$，回到步骤二。重复这个过程，一直算到最后一个阶段$T$，这样形成了整个链条：$S_1,A_1,R_1,S_2,A_2,R_2,\ldots,S_T$。
+
+这个时候可以赋值$V^1$了，$$V^1_t(f_2(T(S_t,Y_t)))\gets R_{t+1}+\ldots+R_{T-1}$$，
+特别的，$V^1_0(f_2(T(S_1,Y_1)))\gets R_{1}+\ldots+R_{T-1}$。
+
+以上第一次迭代完成。
+
+~
+
+步骤五：回到步骤一，一直到步骤四进行第二次迭代，但是初始的值$V^0=0$这里不再是，而是要改为不全为0的，更新过的$V^1$。
+
+同样形成了整个链条：$S_1,A_1,R_1,S_2,\ldots,S_T$，但是需要注意的是，如果本次迭代在某个$t$时刻的$f_2(S_t)$和第一次迭代是一样的，则在更新$V_{t-1}^2(f_2(S_t))=R_t+\ldots+R_{T-1}$需要改为$V_{t-1}^2(f_2(S_t))=\frac{1}{n}(R_t+\ldots+R_{T-1})+(1-\frac{1}{n})V_{t-1}^1(f_2(S_t))$，$n$表示$S_t$在迭代中重复的次数，这里重复两次所以是$n=2$，如果之后的迭代中又出现，就$n=3$，以此类推。
+
+步骤六：在以上迭代了$J$次后，我们得到了$V^J$，这个时候对于任意的状态$S$，我们都能得到一个决策：
+$$
+A=\arg\max\limits_{Y\in f_6}R(S,Y)+V^J(f_2(T(S,Y)))
+$$
+
+以下介绍如何得到$V^1$和$\pi^1$。令$G_{t}=G_{t+1}+R_t$，从$T,\ldots,1$逆向进行计算，其中$G_{t+1}=0$，这样可以计算出所有的$G_t,t=1,\ldots,T$。
+更新$V^1$如下：
+\begin{align}\label{eq-updatev}
+V_t^1(\bar{S}_t)=V_t^{0}(\bar{S}_t)+\frac{1}{\mathbb{N}(\bar{S}_t)}[G_t-V_t^{0}(\bar{S}_t)], 
+\end{align}
+这里$V_t^0(\bar{S}_t)$表示$V_t^0$这个向量中的第$\bar{S}_t$这个状态的值需要进行更新，更新为$V^1_t(\bar{S}_t)$，其余向量中的元素不变；$\frac{1}{\mathbb{N}(\bar{S}_t)}$表示$\bar{S}_t$这个状态在
+$t$阶段之前迭代出现的次数，比如这是第一次迭代，肯定都是第一次出现，因此$\frac{1}{\mathbb{N}(\bar{S}_t)}=1$；随着出现次数的增加，$\frac{1}{\mathbb{N}(\bar{S}_t)}$的值越来越小。
+
+更新$\pi^1=(A^1_1,\ldots,A^1_T)$如下，对于任意的阶段$t$，有：
+\begin{align}\label{A}
+A_t^1=\operatorname*{arg\,max}\limits_{A_t\in f_6(S_t)}[{R}({S}_t,{A}_t)+V^1_{t+1}(\overline{S_t+(\xi_{il})_t)}]
+\end{align}
+这里$\overline{S_t+(\xi_{il})_t}$表示状态$S_t$加上$(\xi_{il})_t)$之后形成下阶段状态后再进行状态压缩（函数2）。从而我们获得更新后的状态。
+
+~
+
+\textbf{函数9 }
+按照函数8进行的规律学习
+$[S_1,V^{j},\pi^j]=f_8(f_1,V^{j-1},\Xi,\pi^{j-1})$，只是将$V^0$变为$V^{j-1}$，$V^1$变为$V^{j-1}$。
+$j=1,\ldots,J$。特别注意：在每次迭代中，第一个状态$S_1$都要重新根据$f_1$获取。
+
+最终在第$J$次迭代后，我们获得$V^J=[V_1^J(S_1),V_2^J
+,\ldots,V_T^J]$。
+
+~
+
+\textbf{函数10 }
+$[V_t,A_t]=f_{10}(S_t)$
+
+给定任意的状态$S_t$，能够得到该状态下的最优值$V_t$（一个常数）和最优策略$A_t$（一个分配策略），满足以下公式：
+\begin{align}\label{A2}
+A_t&=\operatorname*{arg\,max}\limits_{A_t\in f_6(S_t)}[{R}({S}_t,{A}_t)+V^J_{t+1}(\overline{S_t+(\xi_{il})_t)}]\nb\\
+V_t&=\max\limits_{A_t\in f_6(S_t)}[{R}({S}_t,{A}_t)+V^J_{t+1}(\overline{S_t+(\xi_{il})_t)}]
+\end{align}
+
+
+~
+
+基准策略：
+
+\textbf{函数11（随机分配）：}
+$v_1=f_{11}(\Xi,S_t)$
+
+表示给定$\Xi=((\xi_{il})_t,\ldots,(\xi_{il})_T)$和状态$S_t$就能够得到在状态$S_t$下的值$v_1$。
+
+生成的轨迹如下：$S_t,A_t,R_t,(\xi_{il})_t,S_{t+1},\ldots,S_{T},A_{T},R_t$。
+在这个轨迹中，$A_t$的确定是随机的，只需要$A_t=(i^m,l^m)$满足\eqref{s0-1}-\eqref{s0-3}中，随机选择一个决策即可。
+
+
+\textbf{函数12（就近分配）：}
+$v_2=f_{12}(\Xi,S_t)$
+
+生成的轨迹如下：$S_t,A_t,R_t,(\xi_{il})_t,S_{t+1},\ldots,S_{T},A_{T},R_t$。
+在这个轨迹中，$A_t$的确定是就近的，需要$A_t=(i^m,l^m)$满足\eqref{s0-1}-\eqref{s0-3}的约束，同时有目标函数：
+\begin{align}
+    R^2=\min\sum\limits_{m=1}^M c_1(i_m,i^m)
+\end{align}
+
+
+\textbf{函数13（单阶段最优分配）：}
+$v_2=f_{12}(\Xi,S_t)$
+
+生成的轨迹如下：$S_t,A_t,R_t,(\xi_{il})_t,S_{t+1},\ldots,S_{T},A_{T},R_t$。
+在这个轨迹中，$A_t$的确定是就近的，需要$A_t=(i^m,l^m)$满足\eqref{s0-1}-\eqref{s0-3}的约束，同时有目标函数\eqref{revenue}。这个是保证每个阶段内是最优的决策。
+
+
+
+\end{document}
